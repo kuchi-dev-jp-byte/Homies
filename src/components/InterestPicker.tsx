@@ -57,14 +57,17 @@ const groups: {
   },
 ];
 
-const key = (label: string) => label.normalize("NFKC").trim().toLowerCase();
+export const interestKey = (label: string) =>
+  label.normalize("NFKC").trim().toLowerCase();
 
 export function InterestPicker({
   initial,
+  filterOptions,
   onCancel,
   onSave,
 }: {
   initial: Interest[];
+  filterOptions?: Interest[];
   onCancel: () => void;
   onSave: (tags: Interest[]) => void;
 }) {
@@ -77,21 +80,26 @@ export function InterestPicker({
   const [label, setLabel] = useState("");
   const [groupName, setGroupName] = useState("暮らし・おでかけ");
   const [error, setError] = useState("");
-  const term = key(query).replace(/^#/, "");
+  const term = interestKey(query).replace(/^#/, "");
   const builtIn = groups.flatMap((group) =>
     group.tags.split("|").map((label) => ({ label, kind: group.kind })),
   );
   const extras = [
     ...new Map(
-      [...catalog, ...initial]
+      [...catalog, ...initial, ...(filterOptions ?? [])]
         .filter(
-          (tag) => !builtIn.some((item) => key(item.label) === key(tag.label)),
+          (tag) =>
+            !builtIn.some(
+              (item) => interestKey(item.label) === interestKey(tag.label),
+            ),
         )
-        .map((tag) => [key(tag.label), tag]),
+        .map((tag) => [interestKey(tag.label), tag]),
     ).values(),
   ];
   const pick = (tag: Interest) => {
-    const exists = selected.some((item) => key(item.label) === key(tag.label));
+    const exists = selected.some(
+      (item) => interestKey(item.label) === interestKey(tag.label),
+    );
     if (!exists && selected.length >= 12) {
       setError("選べるタグは12件までです。");
       return;
@@ -99,7 +107,9 @@ export function InterestPicker({
     setError("");
     setSelected(
       exists
-        ? selected.filter((item) => key(item.label) !== key(tag.label))
+        ? selected.filter(
+            (item) => interestKey(item.label) !== interestKey(tag.label),
+          )
         : [...selected, tag],
     );
   };
@@ -141,7 +151,8 @@ export function InterestPicker({
               ),
             ].filter(
               (tag) =>
-                key(group.name).includes(term) || key(tag.label).includes(term),
+                interestKey(group.name).includes(term) ||
+                interestKey(tag.label).includes(term),
             );
             if (!options.length) return null;
             const expanded = !!term || open.includes(group.name);
@@ -188,7 +199,8 @@ export function InterestPicker({
                   >
                     {options.map((tag) => {
                       const active = selected.some(
-                        (item) => key(item.label) === key(tag.label),
+                        (item) =>
+                          interestKey(item.label) === interestKey(tag.label),
                       );
                       return (
                         <Pressable
@@ -221,7 +233,7 @@ export function InterestPicker({
               </View>
             );
           })}
-          {adding ? (
+          {filterOptions ? null : adding ? (
             <>
               <Field
                 label="新しいタグ"
@@ -258,14 +270,18 @@ export function InterestPicker({
                     .trim();
                   if (!name) return setError("タグ名を入力してください。");
                   const existing = [...builtIn, ...extras].find(
-                    (tag) => key(tag.label) === key(name),
+                    (tag) => interestKey(tag.label) === interestKey(name),
                   );
                   const kind =
                     groups.find((group) => group.name === groupName)?.kind ??
                     "other";
                   const tag = existing ?? { label: name, kind };
                   if (!existing) addInterest(tag);
-                  if (!selected.some((item) => key(item.label) === key(name)))
+                  if (
+                    !selected.some(
+                      (item) => interestKey(item.label) === interestKey(name),
+                    )
+                  )
                     pick(tag);
                   setOpen(
                     groups
@@ -301,7 +317,10 @@ export function InterestPicker({
           }}
         >
           <Text style={styles.muted}>
-            選択中 {selected.length}/12 · 選んだタグはプロフィールに表示されます
+            選択中 {selected.length}/12
+            {filterOptions
+              ? " · 選んだタグをすべて持つ候補を表示"
+              : " · 選んだタグはプロフィールに表示されます"}
           </Text>
           {!!error && (
             <Text accessibilityLiveRegion="polite" style={{ color: C.pink }}>
@@ -313,7 +332,9 @@ export function InterestPicker({
               戻る
             </Button>
             <View style={{ flex: 1 }}>
-              <Button onPress={() => onSave(selected)}>選択を確定</Button>
+              <Button onPress={() => onSave(selected)}>
+                {filterOptions ? "絞り込む" : "タグを保存"}
+              </Button>
             </View>
           </View>
         </View>

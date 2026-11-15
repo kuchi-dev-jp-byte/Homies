@@ -161,7 +161,7 @@ export function Header() {
   return (
     <View
       className="flex-row items-center justify-between"
-      style={{ paddingHorizontal: 18, paddingTop: 9, paddingBottom: 11 }}
+      style={{ paddingHorizontal: 18, paddingTop: 12, paddingBottom: 11 }}
     >
       <Pressable
         onPress={() => router.navigate("/")}

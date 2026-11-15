@@ -10,8 +10,9 @@ import { useAppStore } from "../src/store/useAppStore";
 import { profileSchema } from "../src/lib/domain";
 import { imageSource } from "../src/data/images";
 import { InterestPicker } from "../src/components/InterestPicker";
+import { useCurrentProfile } from "../src/lib/hooks";
 export default function EditProfile() {
-  const me = useAppStore((s) => s.me),
+  const me = useCurrentProfile(),
     update = useAppStore((s) => s.updateProfile);
   const [gender, setGender] = useState(me.gender ?? "unspecified"),
     [banner, setBanner] = useState(me.banner);
@@ -167,6 +168,7 @@ export default function EditProfile() {
             initial={tags}
             onCancel={() => setEditingTags(false)}
             onSave={(selection) => {
+              update({ interests: selection });
               setTags(selection);
               setEditingTags(false);
             }}

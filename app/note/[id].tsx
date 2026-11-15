@@ -1,5 +1,6 @@
+import { Heart } from "lucide-react-native";
 import { useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   Avatar,
@@ -19,6 +20,8 @@ export default function NoteDetail() {
   const friends = useAppStore((s) => s.friends);
   const blocked = useAppStore((s) => s.blocked);
   const send = useAppStore((s) => s.sendDirect);
+  const toggleLike = useAppStore((s) => s.toggleNoteLike);
+  const likedNote = useAppStore((s) => s.noteLikes[`${s.role}:${id}`]);
   const person = profiles.find((profile) => profile.id === id);
   const note = chatThreads(friends).find((thread) => thread.id === id)?.note;
 
@@ -33,6 +36,7 @@ export default function NoteDetail() {
     );
   }
 
+  const liked = likedNote === note;
   return (
     <DetailScreen title="ノート">
       <View style={{ alignItems: "center", paddingVertical: 28, gap: 12 }}>
@@ -74,6 +78,26 @@ export default function NoteDetail() {
         >
           返信
         </Button>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            liked ? "ノートのいいねを取り消す" : "ノートにいいね"
+          }
+          accessibilityState={{ selected: liked }}
+          onPress={() => toggleLike(person.id, note)}
+          style={{
+            width: 44,
+            height: 44,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Heart
+            size={24}
+            color={liked ? C.pink : C.ink}
+            fill={liked ? C.pink : "none"}
+          />
+        </Pressable>
       </View>
     </DetailScreen>
   );

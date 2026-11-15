@@ -10,7 +10,12 @@ export default function ProfileDetail() {
     student = useAppStore((s) => s.me),
     blocked = useAppStore((s) => s.blocked.includes(id));
   const current = useCurrentProfile();
-  const profile = id === "me" ? student : profiles.find((p) => p.id === id);
+  const profile =
+    id === current.id
+      ? current
+      : id === "me"
+        ? student
+        : profiles.find((p) => p.id === id);
   return (
     <DetailScreen title={profile && !blocked ? profile.name : "プロフィール"}>
       {profile && !blocked ? (

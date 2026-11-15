@@ -9,7 +9,7 @@ import { FriendButton } from "../components/FriendButton";
 import { matchedProfiles } from "../lib/matching";
 import { imageSource } from "../data/images";
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Modal, Pressable, Text, TextInput, View } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import {
@@ -18,7 +18,8 @@ import {
   MoreHorizontal,
   SlidersHorizontal,
 } from "lucide-react-native";
-import { Profile } from "../data/types";
+import { InterestPicker, interestKey } from "../components/InterestPicker";
+import { Interest, Profile } from "../data/types";
 import { useAppStore } from "../store/useAppStore";
 import { compatibility } from "../lib/domain";
 import { useProfiles } from "../lib/hooks";
@@ -333,7 +334,8 @@ export default function Matching() {
     [grade, setGrade] = useState("すべて"),
     [classroom, setClassroom] = useState(""),
     [club, setClub] = useState(""),
-    [wish, setWish] = useState("");
+    [interestFilters, setInterestFilters] = useState<Interest[]>([]),
+    [pickingInterests, setPickingInterests] = useState(false);
   const { data: people, isLoading } = useProfiles(),
     me = useAppStore((s) => s.me),
     blocked = useAppStore((s) => s.blocked),
@@ -349,7 +351,11 @@ export default function Matching() {
         (grade === "すべて" || p.grade === Number(grade)) &&
         (!classroom || p.classroom === Number(classroom)) &&
         (!club || p.club.includes(club)) &&
-        (!wish || p.wishes.includes(wish)),
+        interestFilters.every((tag) =>
+          p.interests.some(
+            (item) => interestKey(item.label) === interestKey(tag.label),
+          ),
+        ),
     )
     .sort((a, b) => compatibility(me, b).score - compatibility(me, a).score);
   const directMessages = useAppStore((s) => s.directMessages);
@@ -482,7 +488,6 @@ export default function Matching() {
           {[
             [classroom, setClassroom, "クラス（例：4）"],
             [club, setClub, "部活（例：美術部）"],
-            [wish, setWish, "やりたいこと（例：文化祭）"],
           ].map(([value, setter, placeholder], i) => (
             <TextInput
               key={i}
@@ -501,6 +506,32 @@ export default function Matching() {
               }}
             />
           ))}
+          <View style={{ marginBottom: 8 }}>
+            <Button secondary small onPress={() => setPickingInterests(true)}>
+              {interestFilters.length
+                ? interestFilters.map((tag) => `#${tag.label}`).join(" · ")
+                : "趣味タグを選ぶ"}
+            </Button>
+          </View>
+          <Modal
+            visible={pickingInterests}
+            animationType="slide"
+            onRequestClose={() => setPickingInterests(false)}
+          >
+            {pickingInterests && (
+              <InterestPicker
+                initial={interestFilters}
+                filterOptions={(people ?? []).flatMap(
+                  (person) => person.interests,
+                )}
+                onCancel={() => setPickingInterests(false)}
+                onSave={(tags) => {
+                  setInterestFilters(tags);
+                  setPickingInterests(false);
+                }}
+              />
+            )}
+          </Modal>
           <Button
             secondary
             small
@@ -508,7 +539,7 @@ export default function Matching() {
               setGrade("すべて");
               setClassroom("");
               setClub("");
-              setWish("");
+              setInterestFilters([]);
             }}
           >
             条件をクリア

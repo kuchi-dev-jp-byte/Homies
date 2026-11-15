@@ -49,6 +49,8 @@ interface AppState extends SocialState {
   publishInstant: (uri: string, caption?: string) => void;
   receiveDemoInstant: () => void;
   viewInstant: (id: string) => void;
+  noteLikes: Record<string, string>;
+  toggleNoteLike: (authorId: string, note: string) => void;
   ownNoteAt: string | null;
   cardGame: CardGame | null;
   cardScores: Record<string, number>;
@@ -87,6 +89,7 @@ interface AppState extends SocialState {
   addComment: (postId: string, body: string) => void;
   customInterests: Interest[];
   addCustomInterest: (tag: Interest) => void;
+  teacherProfile: Profile;
   updateProfile: (patch: Partial<Profile>) => void;
   match: (id: string, action: MatchingAction) => void;
   resetMatches: () => void;
@@ -101,6 +104,7 @@ interface AppState extends SocialState {
 const toggle = (items: string[], id: string) =>
   items.includes(id) ? items.filter((x) => x !== id) : [...items, id];
 const defaults = () => ({
+  teacherProfile: staffProfile,
   customInterests: [] as Interest[],
   friends: ["mio", "haruka", "yuto"],
   sentRequests: [],
@@ -123,6 +127,7 @@ const defaults = () => ({
   instants: [],
   viewedInstants: [],
   ownNoteAt: null,
+  noteLikes: {} as Record<string, string>,
   cardGame: null,
   cardScores: {},
   directMessages: {},
@@ -149,6 +154,14 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       ...defaults(),
+      toggleNoteLike: (authorId, note) =>
+        set((s) => {
+          const key = `${s.role}:${authorId}`;
+          const noteLikes = { ...s.noteLikes };
+          if (noteLikes[key] === note) delete noteLikes[key];
+          else noteLikes[key] = note;
+          return { noteLikes };
+        }),
       sendFriendRequest: (id) => {
         const s = get();
         if (s.blocked.includes(id) || !profiles.some((p) => p.id === id))
@@ -444,7 +457,9 @@ export const useAppStore = create<AppState>()(
         set((s) => ({ customInterests: [...s.customInterests, tag] })),
       updateProfile: (patch) =>
         set((s) => ({
-          me: { ...s.me, ...patch },
+          ...(s.role === "teacher"
+            ? { teacherProfile: { ...s.teacherProfile, ...patch } }
+            : { me: { ...s.me, ...patch } }),
           toast: "プロフィールを更新しました",
         })),
       match: (id, action) =>

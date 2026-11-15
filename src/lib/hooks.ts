@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { repository } from "../data/repository";
-import { staffProfile } from "../data/accounts";
 import { profiles } from "../data/mock";
 import { useAppStore } from "../store/useAppStore";
 import { visibleTo } from "./domain";
@@ -17,7 +16,7 @@ export const useCommunities = () =>
     staleTime: Infinity,
   });
 export function useCurrentProfile() {
-  return useAppStore((s) => (s.role === "teacher" ? staffProfile : s.me));
+  return useAppStore((s) => (s.role === "teacher" ? s.teacherProfile : s.me));
 }
 
 export function useVisiblePosts() {
