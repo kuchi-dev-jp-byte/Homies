@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Homies",
+    "slug": "homies",
+    "scheme": "homies",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.homies.app"
+    },
+    "android": {
+      "package": "dev.homies.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "Homies | 学校生活を、もっと自分らしく。"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "投稿やプロフィールに使用する画像を選択します。",
+          "cameraPermission": "インスタントの写真を撮影するためにカメラを使用します。",
+          "microphonePermission": false
+        }
+      ]
+    ]
+  }
+}

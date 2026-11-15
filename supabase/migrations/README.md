@@ -1,0 +1,1 @@
+Phase 1 does not apply migrations. See ../../docs/database-design.md for the full school-isolation / RLS design. SQL is deliberately not presented as production-ready until school verification and adversarial RLS tests are implemented in Phase 2/3.
