@@ -1,3 +1,4 @@
+import { Mascot } from "../../src/components/Mascot";
 import Svg, { Path } from "react-native-svg";
 import { isMutualInterest } from "../../src/lib/matching";
 import { activeUntil } from "../../src/lib/activity";
@@ -12,7 +13,7 @@ import {
   View,
 } from "react-native";
 import { router } from "expo-router";
-import { Search, Plus, Images } from "lucide-react-native";
+import { Search, Plus, Images, SquarePen } from "lucide-react-native";
 import {
   Avatar,
   Button,
@@ -121,6 +122,8 @@ export default function Chats() {
     blocked = useAppStore((s) => s.blocked);
   const instants = useAppStore((s) => s.instants);
   const seen = useAppStore((s) => s.viewedInstants);
+  const groups = useAppStore((s) => s.groups);
+  const role = useAppStore((s) => s.role);
   const directThreads = chatThreads(
     friends.filter(
       (id) =>
@@ -146,6 +149,15 @@ export default function Chats() {
       !seen.includes(item.id) &&
       activeUntil(item.createdAt, now),
   ).length;
+  const groupRows =
+    role === "student"
+      ? groups.filter(
+          (group) =>
+            group.ownerId === me.id &&
+            !group.trial &&
+            group.name.normalize("NFKC").toLowerCase().includes(search),
+        )
+      : [];
   return (
     <View style={{ flex: 1 }}>
       <Screen>
@@ -155,7 +167,7 @@ export default function Chats() {
             flexDirection: "row",
             alignItems: "center",
             gap: 8,
-            backgroundColor: "#EEEEEE",
+            backgroundColor: C.surface,
             borderRadius: 14,
             paddingHorizontal: 13,
             marginBottom: 20,
@@ -252,16 +264,54 @@ export default function Chats() {
           </ScrollView>
         )}
         <View style={{ paddingHorizontal: 20 }}>
-          <Text
+          <View
             style={{
-              fontSize: 16,
-              fontWeight: "800",
-              color: C.ink,
-              marginVertical: 8,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              backgroundColor: "#E3F3FF",
+              paddingHorizontal: 14,
+              paddingVertical: 7,
+              borderRadius: 20,
+              marginTop: 8,
+              marginBottom: 6,
             }}
           >
-            メッセージ
-          </Text>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "800",
+                color: C.ink,
+                marginVertical: 8,
+              }}
+            >
+              メッセージ
+            </Text>
+            <Mascot id="fav" size={65} />
+          </View>
+          {groupRows.map((group) => (
+            <Pressable
+              key={group.id}
+              accessibilityRole="button"
+              onPress={() => router.push(`/group-chat/${group.id}`)}
+              style={{
+                minHeight: 74,
+                paddingVertical: 12,
+                justifyContent: "center",
+                borderBottomWidth: 1,
+                borderColor: C.line,
+              }}
+            >
+              <Text style={{ fontWeight: "800", color: C.ink }}>
+                {group.icon ?? "👥"} {group.name}
+              </Text>
+              <Text style={styles.muted} numberOfLines={1}>
+                {group.messages
+                  .filter((message) => !blocked.includes(message.authorId))
+                  .at(-1)?.body ?? "グループチャット"}
+              </Text>
+            </Pressable>
+          ))}
           {threads.map(({ thread: t, profile: p }) => {
             const last = messages[t.id]?.at(-1);
             return (
@@ -292,7 +342,11 @@ export default function Chats() {
                     numberOfLines={1}
                     style={[styles.muted, { marginTop: 2 }]}
                   >
-                    {last ? `あなた: ${last.body}` : t.preview}
+                    {last
+                      ? last.authorId === p.id
+                        ? last.body
+                        : `あなた: ${last.body}`
+                      : t.preview}
                   </Text>
                 </View>
                 {(last?.time || t.time) && (
@@ -303,8 +357,9 @@ export default function Chats() {
               </Pressable>
             );
           })}
-          {!threads.length && (
+          {!threads.length && !groupRows.length && (
             <Empty
+              mascot="sleep"
               icon="users"
               title={
                 search ? "チャットが見つかりません" : "まだチャットがありません"
@@ -393,8 +448,30 @@ export default function Chats() {
             </View>
           </View>
         </Modal>
-        <View style={{ height: 52 }} />
+        <View style={{ height: role === "student" ? 112 : 52 }} />
       </Screen>
+      {role === "student" && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="グループチャットを作成"
+          onPress={() => router.push("/create-group")}
+          style={{
+            position: "absolute",
+            right: 20,
+            bottom: 82,
+            width: 56,
+            height: 56,
+            borderRadius: 19,
+            backgroundColor: C.accent,
+            borderWidth: 2,
+            borderColor: "white",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <SquarePen size={24} color="white" />
+        </Pressable>
+      )}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={
@@ -408,7 +485,7 @@ export default function Chats() {
           width: 56,
           height: 56,
           borderRadius: 19,
-          backgroundColor: C.ink,
+          backgroundColor: C.accent,
           borderWidth: 2,
           borderColor: "white",
           justifyContent: "center",

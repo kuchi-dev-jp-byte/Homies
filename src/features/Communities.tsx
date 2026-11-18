@@ -1,3 +1,4 @@
+import { MascotBanner } from "../components/MascotBanner";
 import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
@@ -6,7 +7,14 @@ import { Community } from "../data/types";
 import { useAppStore } from "../store/useAppStore";
 import { useCommunities } from "../lib/hooks";
 import { messageTime, roomMessages } from "../lib/chat";
-import { C, Empty, Loading, Screen, styles } from "../components/ui";
+import {
+  C,
+  Empty,
+  Loading,
+  Screen,
+  SegmentTabs,
+  styles,
+} from "../components/ui";
 
 export function CommunityCard({
   community,
@@ -125,103 +133,110 @@ export default function Communities() {
       return lastB.localeCompare(lastA);
     });
   return (
-    <Screen>
-      <View
-        style={{
-          marginHorizontal: 20,
-          marginBottom: 10,
-          backgroundColor: "white",
-          borderWidth: 1,
-          borderColor: C.line,
-          borderRadius: 14,
-          paddingHorizontal: 14,
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 8,
-        }}
-      >
-        <Search size={18} color="#A8A8A8" />
-        <TextInput
-          accessibilityLabel="コミュニティを検索"
-          placeholder="コミュニティを検索"
-          placeholderTextColor={C.placeholder}
-          value={query}
-          onChangeText={setQuery}
-          style={{ flex: 1, minHeight: 44, color: C.ink, fontSize: 14 }}
-        />
-      </View>
-      <View
-        accessibilityRole="tablist"
-        style={{
-          flexDirection: "row",
-          marginHorizontal: 20,
-          gap: 26,
-          borderBottomWidth: 1,
-          borderColor: C.line,
-          marginBottom: 8,
-        }}
-      >
-        {["参加中", "おすすめ"].map((m) => (
-          <Pressable
-            key={m}
-            accessibilityRole="tab"
-            aria-selected={mode === m}
-            onPress={() => setMode(m)}
-            style={{
-              paddingVertical: 12,
-              borderBottomWidth: 2,
-              borderColor: mode === m ? C.purple : "transparent",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "700",
-                color: mode === m ? C.purple : C.muted,
-              }}
-            >
-              {m}
-              {m === "参加中" ? ` (${joined.length})` : ""}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-      <View style={{ paddingHorizontal: 20 }}>
-        {isLoading ? (
-          <Loading />
-        ) : (
-          items.map((c) => (
-            <CommunityCard
-              key={c.id}
-              community={c}
-              showConversation={mode === "参加中"}
+    <View style={{ flex: 1 }}>
+      <Screen>
+        {!search && (
+          <View style={{ marginHorizontal: 20, marginBottom: 16 }}>
+            <MascotBanner
+              mascot="game"
+              tone="blue"
+              title="好きが同じって、うれしい。"
+              body="ゲームも音楽も。仲間と話そう。"
             />
-          ))
+          </View>
         )}
-        {!isLoading && !items.length && (
-          <Empty
-            title={
-              search
-                ? "コミュニティが見つかりません"
-                : mode === "参加中"
-                  ? "参加中のコミュニティはありません"
-                  : "新しいおすすめはありません"
-            }
-            body={
-              search
-                ? "別のキーワードで検索してください。"
-                : mode === "参加中"
-                  ? "おすすめから参加したいルームを探せます。"
-                  : "参加中のルームは「参加中」から開けます。"
-            }
-            action={mode === "参加中" ? "おすすめを見る" : undefined}
-            onPress={() => {
-              setMode("おすすめ");
-              setQuery("");
-            }}
+        <View
+          style={{
+            marginHorizontal: 20,
+            marginBottom: 10,
+            backgroundColor: "white",
+            borderWidth: 1,
+            borderColor: C.line,
+            borderRadius: 14,
+            paddingHorizontal: 14,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <Search size={18} color="#A8A8A8" />
+          <TextInput
+            accessibilityLabel="コミュニティを検索"
+            placeholder="コミュニティを検索"
+            placeholderTextColor={C.placeholder}
+            value={query}
+            onChangeText={setQuery}
+            style={{ flex: 1, minHeight: 44, color: C.ink, fontSize: 14 }}
           />
-        )}
-      </View>
-    </Screen>
+        </View>
+        <View style={{ marginHorizontal: 20, marginBottom: 12 }}>
+          <SegmentTabs
+            items={["参加中", "おすすめ"]}
+            value={mode}
+            onChange={setMode}
+            labels={{ 参加中: `参加中 (${joined.length})` }}
+          />
+        </View>
+        <View style={{ paddingHorizontal: 20 }}>
+          {isLoading ? (
+            <Loading />
+          ) : (
+            items.map((c) => (
+              <CommunityCard
+                key={c.id}
+                community={c}
+                showConversation={mode === "参加中"}
+              />
+            ))
+          )}
+          {!isLoading && !items.length && (
+            <Empty
+              title={
+                search
+                  ? "コミュニティが見つかりません"
+                  : mode === "参加中"
+                    ? "参加中のコミュニティはありません"
+                    : "新しいおすすめはありません"
+              }
+              body={
+                search
+                  ? "別のキーワードで検索してください。"
+                  : mode === "参加中"
+                    ? "おすすめから参加したいルームを探せます。"
+                    : "参加中のルームは「参加中」から開けます。"
+              }
+              action={mode === "参加中" ? "おすすめを見る" : undefined}
+              onPress={() => {
+                setMode("おすすめ");
+                setQuery("");
+              }}
+            />
+          )}
+        </View>
+      </Screen>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="コミュニティを作成"
+        onPress={() =>
+          router.push({
+            pathname: "/room-editor",
+            params: { kind: "community" },
+          })
+        }
+        style={{
+          position: "absolute",
+          right: 22,
+          bottom: 22,
+          width: 58,
+          height: 58,
+          borderRadius: 29,
+          backgroundColor: C.accent,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text style={{ color: "white", fontSize: 32 }}>＋</Text>
+      </Pressable>
+    </View>
   );
 }

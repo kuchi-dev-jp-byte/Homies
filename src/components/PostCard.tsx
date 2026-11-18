@@ -1,16 +1,18 @@
-import { useCurrentProfile } from "../lib/hooks";
+import { useState } from "react";
+import { PostMenu } from "./PostMenu";
+import { useVisiblePosts, useCurrentProfile } from "../lib/hooks";
 import { sampleComments } from "../data/social";
 import { imageSource } from "../data/images";
 import { Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import {
+  Repeat2,
   Bookmark,
   Heart,
   LockKeyhole,
   Megaphone,
   MessageCircle,
-  MoreHorizontal,
   UserRound,
 } from "lucide-react-native";
 import { Post } from "../data/types";
@@ -29,12 +31,16 @@ const actionStyle = {
 export function PostCard({
   post,
   full = false,
-  flat = false,
+  flat = true,
 }: {
   post: Post;
   full?: boolean;
   flat?: boolean;
 }) {
+  const [repostMenu, setRepostMenu] = useState(false);
+  const reposted = useAppStore((s) => s.reposted.includes(post.id));
+  const toggleRepost = useAppStore((s) => s.toggleRepost);
+  const quoted = useVisiblePosts().find((p) => p.id === post.quoteId);
   const liked = useAppStore((s) => s.liked.includes(post.id));
   const saved = useAppStore((s) =>
     (s.role === "teacher" ? s.staffSaved : s.saved).includes(post.id),
@@ -194,11 +200,13 @@ export function PostCard({
   return (
     <View
       style={[
-        flat || full
-          ? { borderBottomWidth: 1, borderColor: C.line }
-          : styles.card,
         {
-          paddingHorizontal: full ? 0 : 15,
+          borderBottomWidth: 1,
+          borderColor: C.line,
+          backgroundColor: "transparent",
+        },
+        {
+          paddingHorizontal: full ? 0 : 12,
           paddingTop: flat ? 15 : 11,
           paddingBottom: 3,
           marginBottom: flat ? 0 : 12,
@@ -220,19 +228,7 @@ export function PostCard({
         ) : (
           <View style={[actionStyle, { flex: 1, gap: 9 }]}>{identity}</View>
         )}
-        <IconButton
-          label="投稿のメニュー"
-          onPress={() =>
-            router.push({
-              pathname: "/safety",
-              params: post.anonymous
-                ? { postId: post.id }
-                : { postId: post.id, userId: post.authorId },
-            })
-          }
-        >
-          <MoreHorizontal size={21} color={C.muted} />
-        </IconButton>
+        <PostMenu post={post} full={full} />
       </View>
       {full ? (
         <View>{body}</View>
@@ -240,6 +236,58 @@ export function PostCard({
         <Pressable accessibilityRole="link" onPress={open}>
           {body}
         </Pressable>
+      )}
+      {!!post.quoteId && (
+        <Pressable
+          accessibilityRole="link"
+          onPress={() => quoted && router.push(`/post/${quoted.id}`)}
+          style={{
+            padding: 12,
+            borderWidth: 1,
+            borderColor: C.line,
+            borderRadius: 12,
+            marginTop: 8,
+          }}
+        >
+          <Text style={styles.muted}>引用した投稿</Text>
+          <Text style={styles.text}>
+            {quoted?.body ?? "この投稿は表示できません"}
+          </Text>
+        </Pressable>
+      )}
+      {repostMenu && (
+        <View
+          style={{
+            padding: 12,
+            gap: 12,
+            backgroundColor: C.surface,
+            borderRadius: 16,
+          }}
+        >
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              toggleRepost(post.id);
+              setRepostMenu(false);
+            }}
+          >
+            <Text style={styles.text}>
+              {reposted ? "リポストを取り消す" : "リポストする"}
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setRepostMenu(false);
+              router.push({
+                pathname: "/create",
+                params: { quoteId: post.id },
+              });
+            }}
+          >
+            <Text style={styles.text}>引用する</Text>
+          </Pressable>
+        </View>
       )}
       {full && author && (
         <Text style={[styles.muted, { marginVertical: 10 }]}>{post.time}</Text>
@@ -276,6 +324,17 @@ export function PostCard({
             style={actionStyle}
           >
             {commentCount}
+          </Pressable>
+        )}
+        {!school && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="再投稿"
+            onPress={() => setRepostMenu(!repostMenu)}
+            style={actionStyle}
+          >
+            <Repeat2 size={22} color={reposted ? C.accent : C.muted} />
+            <Text style={styles.muted}>{reposted ? 1 : 0}</Text>
           </Pressable>
         )}
         <View style={{ flex: 1 }} />

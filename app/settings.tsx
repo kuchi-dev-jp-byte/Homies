@@ -17,8 +17,28 @@ import {
 } from "../src/components/ui";
 import { useAppStore } from "../src/store/useAppStore";
 
+import { useAuth } from "../src/lib/auth";
+import { authClient, demoAuth } from "../src/lib/supabase";
+
 export default function Settings() {
   const [confirm, setConfirm] = useState(false);
+  const { email } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
+  const [authError, setAuthError] = useState("");
+  async function signOut() {
+    if (!authClient || signingOut) return;
+    setSigningOut(true);
+    setAuthError("");
+    try {
+      const { error } = await authClient.auth.signOut({ scope: "local" });
+      if (error)
+        setAuthError("ログアウトできませんでした。再度お試しください。");
+    } catch {
+      setAuthError("通信に失敗しました。再度お試しください。");
+    } finally {
+      setSigningOut(false);
+    }
+  }
   const reset = useAppStore((s) => s.reset);
   const blocked = useAppStore((s) => s.blocked);
   const reported = useAppStore((s) => s.reported);
@@ -47,17 +67,29 @@ export default function Settings() {
       <View style={[styles.card, layout.group]}>
         <Pressable
           accessibilityRole="button"
-          onPress={() => router.push("/login")}
+          disabled={signingOut}
+          onPress={() => (demoAuth ? router.push("/login") : void signOut())}
           style={layout.row}
         >
           <UserRound size={19} color={C.purple} />
-          <Text style={[styles.text, layout.grow]}>アカウントを切り替える</Text>
+          <Text style={[styles.text, layout.grow]}>
+            {demoAuth
+              ? "アカウントを切り替える"
+              : signingOut
+                ? "ログアウト中…"
+                : "ログアウト"}
+          </Text>
           <Text style={styles.muted}>
-            {role === "teacher" ? "教職員" : "生徒"}
+            {demoAuth ? (role === "teacher" ? "教職員" : "生徒") : email}
           </Text>
           <ChevronRight size={16} color={C.muted} />
         </Pressable>
       </View>
+      {!!authError && (
+        <Text accessibilityLiveRegion="polite" style={{ color: C.pink }}>
+          {authError}
+        </Text>
+      )}
       <SectionTitle>端末のデータ</SectionTitle>
       <View style={[styles.card, layout.group]}>
         {confirm ? (

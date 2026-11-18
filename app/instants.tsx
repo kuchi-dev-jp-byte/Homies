@@ -61,7 +61,7 @@ export default function Instants() {
   }
 
   return (
-    <DetailScreen title="インスタント">
+    <DetailScreen title="インスタント" dark>
       <View
         style={{
           backgroundColor: "#101010",
@@ -222,7 +222,7 @@ export default function Instants() {
         style={{
           fontSize: 16,
           fontWeight: "800",
-          color: C.ink,
+          color: "white",
           marginBottom: 8,
         }}
       >
@@ -257,7 +257,7 @@ export default function Instants() {
                   width: 38,
                   height: 38,
                   borderRadius: 12,
-                  backgroundColor: "#ECECEC",
+                  backgroundColor: "#262626",
                   justifyContent: "center",
                   alignItems: "center",
                 }}
@@ -268,13 +268,13 @@ export default function Instants() {
             <View style={{ flex: 1, gap: 2 }}>
               <Text
                 numberOfLines={1}
-                style={{ color: C.ink, fontSize: 14, fontWeight: "700" }}
+                style={{ color: "white", fontSize: 14, fontWeight: "700" }}
               >
                 {own ? "あなたのインスタント" : (author?.name ?? "友達")}
               </Text>
               <Text
                 numberOfLines={1}
-                style={[styles.muted, !own && !viewed && { color: C.purple }]}
+                style={[styles.muted, !own && !viewed && { color: "white" }]}
               >
                 {status}
               </Text>
@@ -285,6 +285,7 @@ export default function Instants() {
       })}
       {!active.length && (
         <Empty
+          mascot="camera"
           title="インスタントはまだありません"
           body="シェアした写真と、友達から届いた写真がここに並びます。"
         />

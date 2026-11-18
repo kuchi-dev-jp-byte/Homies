@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-/** Explicit factory; the demo never sends data to Supabase. */
+
 export function createSupabaseClient() {
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
   const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -14,3 +14,17 @@ export function createSupabaseClient() {
     },
   });
 }
+
+const localPreview =
+  typeof window !== "undefined" &&
+  ["localhost", "127.0.0.1", "[::1]"].includes(window.location?.hostname);
+
+export const demoAuth =
+  (localPreview || process.env.EXPO_PUBLIC_HOMIES_DEMO === "true") &&
+  !process.env.EXPO_PUBLIC_SUPABASE_URL &&
+  !process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+export const authClient =
+  process.env.EXPO_PUBLIC_SUPABASE_URL &&
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+    ? createSupabaseClient()
+    : null;

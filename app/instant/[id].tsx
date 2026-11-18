@@ -81,7 +81,7 @@ export default function Instant() {
   }, [opened]);
   if (!item || !permitted)
     return (
-      <DetailScreen title="インスタント">
+      <DetailScreen title="インスタント" dark>
         <Empty
           title="写真を表示できません"
           body="公開中のインスタントを一覧から選択してください。"
@@ -90,7 +90,7 @@ export default function Instant() {
     );
   if (!activeUntil(item.createdAt, now))
     return (
-      <DetailScreen title="インスタント">
+      <DetailScreen title="インスタント" dark>
         <Empty
           title="公開が終了しました"
           body="インスタントは24時間で表示されなくなります。"
@@ -100,7 +100,7 @@ export default function Instant() {
   const consumed =
     item.authorId !== "me" && seen.includes(id) && !claimed.current;
   return (
-    <DetailScreen title="インスタント">
+    <DetailScreen title="インスタント" dark>
       {Platform.OS === "web" ? (
         <Empty
           title="アプリで閲覧してください"
@@ -151,14 +151,14 @@ export default function Instant() {
               width: 44,
               height: 44,
               borderRadius: 14,
-              backgroundColor: "#ECECEC",
+              backgroundColor: "#242424",
               justifyContent: "center",
               alignItems: "center",
             }}
           >
             <Eye size={22} color={C.purple} />
           </View>
-          <Text style={{ color: C.ink, fontSize: 17, fontWeight: "800" }}>
+          <Text style={{ color: "white", fontSize: 17, fontWeight: "800" }}>
             10秒間だけ表示されます
           </Text>
           <Text style={styles.muted}>

@@ -1,3 +1,4 @@
+import { MascotBanner } from "../components/MascotBanner";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -174,7 +175,7 @@ function CandidateRow({ profile }: { profile: Profile }) {
             right: 0,
             bottom: 9,
             left: 0,
-            backgroundColor: "#E1F6FD",
+            backgroundColor: C.accentSoft,
             justifyContent: "center",
             paddingHorizontal: 12,
           },
@@ -378,205 +379,218 @@ export default function Matching() {
     );
   }
   return (
-    <Screen>
-      <View
-        accessibilityRole="tablist"
-        className="flex-row"
-        style={{
-          marginHorizontal: 22,
-          marginTop: 8,
-          backgroundColor: "#EDEDED",
-          padding: 4,
-          borderRadius: 17,
-          marginBottom: 10,
-        }}
-      >
-        {["候補", "マッチした相手"].map((v) => {
-          const matchesTab = v === "マッチした相手";
-          const selected = matchesTab === showingMatches;
-          return (
-            <Pressable
-              key={v}
-              accessibilityRole="tab"
-              accessibilityState={{ selected }}
-              accessibilityLabel={
-                matchesTab && newMatches ? `${v}、未読あり` : v
-              }
-              onPress={() => {
-                setMode(v);
-                if (matchesTab) readMatches();
-              }}
-              style={{
-                flex: 1,
-                padding: 10,
-                borderRadius: 13,
-                backgroundColor: selected ? "white" : "transparent",
-                alignItems: "center",
-                flexDirection: "row",
-                justifyContent: "center",
-                gap: 6,
-              }}
-            >
-              <Text
+    <View style={{ flex: 1 }}>
+      <Screen>
+        <View
+          accessibilityRole="tablist"
+          className="flex-row"
+          style={{
+            marginHorizontal: 22,
+            marginTop: 8,
+            backgroundColor: C.surface,
+            padding: 4,
+            borderRadius: 17,
+            marginBottom: 10,
+          }}
+        >
+          {["候補", "マッチした相手"].map((v) => {
+            const matchesTab = v === "マッチした相手";
+            const selected = matchesTab === showingMatches;
+            return (
+              <Pressable
+                key={v}
+                accessibilityRole="tab"
+                accessibilityState={{ selected }}
+                accessibilityLabel={
+                  matchesTab && newMatches ? `${v}、未読あり` : v
+                }
+                onPress={() => {
+                  setMode(v);
+                  if (matchesTab) readMatches();
+                }}
                 style={{
-                  fontSize: 12,
-                  fontWeight: "700",
-                  color: selected ? C.purple : C.ink,
+                  flex: 1,
+                  padding: 10,
+                  borderRadius: 13,
+                  backgroundColor: selected ? C.lime : "transparent",
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  gap: 6,
                 }}
               >
-                {v}
-              </Text>
-              {matchesTab && newMatches && (
-                <View
+                <Text
                   style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: 4,
-                    backgroundColor: "#676767",
+                    fontSize: 12,
+                    fontWeight: "700",
+                    color: selected ? C.purple : C.ink,
+                  }}
+                >
+                  {v}
+                </Text>
+                {matchesTab && newMatches && (
+                  <View
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: 4,
+                      backgroundColor: C.accent,
+                    }}
+                  />
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+        <View style={{ marginHorizontal: 20, marginTop: 4, marginBottom: 10 }}>
+          <MascotBanner
+            mascot="heart"
+            tone="blue"
+            title="クイックマッチで、今すぐ話そう。"
+            body="同年代の3〜5人とグループチャット"
+            onPress={() => router.push("/quick-match")}
+          />
+        </View>
+        {!showingMatches && (
+          <View
+            style={{
+              flexDirection: "row",
+              marginHorizontal: 22,
+              justifyContent: "flex-end",
+              gap: 4,
+              alignItems: "center",
+              minHeight: 40,
+            }}
+          >
+            <IconButton
+              label={filters ? "絞り込みを閉じる" : "絞り込み"}
+              onPress={() => setFilters(!filters)}
+              style={{
+                borderRadius: 10,
+                backgroundColor: filters ? "#EBEBEB" : "transparent",
+              }}
+            >
+              <SlidersHorizontal size={19} color={C.purple} />
+            </IconButton>
+          </View>
+        )}
+        {filters && !showingMatches && (
+          <View
+            style={[
+              styles.card,
+              { marginHorizontal: 20, padding: 15, marginBottom: 15 },
+            ]}
+          >
+            <Text style={[styles.text, { fontWeight: "700", marginBottom: 9 }]}>
+              条件を絞り込む
+            </Text>
+            <View className="flex-row" style={{ gap: 7, marginBottom: 12 }}>
+              {["すべて", "1", "2", "3"].map((g) => (
+                <Button
+                  key={g}
+                  small
+                  secondary={grade !== g}
+                  onPress={() => setGrade(g)}
+                >
+                  {g === "すべて" ? g : `高${g}`}
+                </Button>
+              ))}
+            </View>
+            {[
+              [classroom, setClassroom, "クラス（例：4）"],
+              [club, setClub, "部活（例：美術部）"],
+            ].map(([value, setter, placeholder], i) => (
+              <TextInput
+                key={i}
+                value={value as string}
+                onChangeText={setter as (v: string) => void}
+                placeholder={placeholder as string}
+                placeholderTextColor={C.placeholder}
+                style={{
+                  borderWidth: 1,
+                  borderColor: C.line,
+                  borderRadius: 10,
+                  padding: 12,
+                  marginBottom: 8,
+                  fontSize: 12,
+                  color: C.ink,
+                }}
+              />
+            ))}
+            <View style={{ marginBottom: 8 }}>
+              <Button secondary small onPress={() => setPickingInterests(true)}>
+                {interestFilters.length
+                  ? interestFilters.map((tag) => `#${tag.label}`).join(" · ")
+                  : "趣味タグを選ぶ"}
+              </Button>
+            </View>
+            <Modal
+              visible={pickingInterests}
+              animationType="slide"
+              onRequestClose={() => setPickingInterests(false)}
+            >
+              {pickingInterests && (
+                <InterestPicker
+                  initial={interestFilters}
+                  filterOptions={(people ?? []).flatMap(
+                    (person) => person.interests,
+                  )}
+                  onCancel={() => setPickingInterests(false)}
+                  onSave={(tags) => {
+                    setInterestFilters(tags);
+                    setPickingInterests(false);
                   }}
                 />
               )}
-            </Pressable>
-          );
-        })}
-      </View>
-      {!showingMatches && (
-        <View
-          style={{
-            flexDirection: "row",
-            marginHorizontal: 22,
-            justifyContent: "flex-end",
-            gap: 4,
-            alignItems: "center",
-            minHeight: 40,
-          }}
-        >
-          <IconButton
-            label={filters ? "絞り込みを閉じる" : "絞り込み"}
-            onPress={() => setFilters(!filters)}
-            style={{
-              borderRadius: 10,
-              backgroundColor: filters ? "#EBEBEB" : "transparent",
-            }}
-          >
-            <SlidersHorizontal size={19} color={C.purple} />
-          </IconButton>
-        </View>
-      )}
-      {filters && !showingMatches && (
-        <View
-          style={[
-            styles.card,
-            { marginHorizontal: 20, padding: 15, marginBottom: 15 },
-          ]}
-        >
-          <Text style={[styles.text, { fontWeight: "700", marginBottom: 9 }]}>
-            条件を絞り込む
-          </Text>
-          <View className="flex-row" style={{ gap: 7, marginBottom: 12 }}>
-            {["すべて", "1", "2", "3"].map((g) => (
-              <Button
-                key={g}
-                small
-                secondary={grade !== g}
-                onPress={() => setGrade(g)}
-              >
-                {g === "すべて" ? g : `高${g}`}
-              </Button>
-            ))}
-          </View>
-          {[
-            [classroom, setClassroom, "クラス（例：4）"],
-            [club, setClub, "部活（例：美術部）"],
-          ].map(([value, setter, placeholder], i) => (
-            <TextInput
-              key={i}
-              value={value as string}
-              onChangeText={setter as (v: string) => void}
-              placeholder={placeholder as string}
-              placeholderTextColor={C.placeholder}
-              style={{
-                borderWidth: 1,
-                borderColor: C.line,
-                borderRadius: 10,
-                padding: 12,
-                marginBottom: 8,
-                fontSize: 12,
-                color: C.ink,
+            </Modal>
+            <Button
+              secondary
+              small
+              onPress={() => {
+                setGrade("すべて");
+                setClassroom("");
+                setClub("");
+                setInterestFilters([]);
               }}
-            />
-          ))}
-          <View style={{ marginBottom: 8 }}>
-            <Button secondary small onPress={() => setPickingInterests(true)}>
-              {interestFilters.length
-                ? interestFilters.map((tag) => `#${tag.label}`).join(" · ")
-                : "趣味タグを選ぶ"}
+            >
+              条件をクリア
             </Button>
           </View>
-          <Modal
-            visible={pickingInterests}
-            animationType="slide"
-            onRequestClose={() => setPickingInterests(false)}
-          >
-            {pickingInterests && (
-              <InterestPicker
-                initial={interestFilters}
-                filterOptions={(people ?? []).flatMap(
-                  (person) => person.interests,
-                )}
-                onCancel={() => setPickingInterests(false)}
-                onSave={(tags) => {
-                  setInterestFilters(tags);
-                  setPickingInterests(false);
-                }}
+        )}
+        {showingMatches ? (
+          <View style={{ paddingHorizontal: 20 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+              {matched.map((p) => (
+                <GridProfile key={p.id} profile={p} />
+              ))}
+            </View>
+            {!matched.length && (
+              <Empty
+                icon="users"
+                title="まだマッチした相手はいません"
+                body="お互いに「気になる」を送ると、ここに表示されます。"
+                action="相手を見つける"
+                onPress={() => setMode("候補")}
               />
             )}
-          </Modal>
-          <Button
-            secondary
-            small
-            onPress={() => {
-              setGrade("すべて");
-              setClassroom("");
-              setClub("");
-              setInterestFilters([]);
-            }}
-          >
-            条件をクリア
-          </Button>
-        </View>
-      )}
-      {showingMatches ? (
-        <View style={{ paddingHorizontal: 20 }}>
-          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-            {matched.map((p) => (
-              <GridProfile key={p.id} profile={p} />
+          </View>
+        ) : isLoading ? (
+          <Loading />
+        ) : candidates.length ? (
+          <View style={{ paddingHorizontal: 14 }}>
+            {candidates.map((profile) => (
+              <CandidateRow key={profile.id} profile={profile} />
             ))}
           </View>
-          {!matched.length && (
-            <Empty
-              icon="users"
-              title="まだマッチした相手はいません"
-              body="お互いに「気になる」を送ると、ここに表示されます。"
-              action="相手を見つける"
-              onPress={() => setMode("候補")}
-            />
-          )}
-        </View>
-      ) : isLoading ? (
-        <Loading />
-      ) : candidates.length ? (
-        <View style={{ paddingHorizontal: 14 }}>
-          {candidates.map((profile) => (
-            <CandidateRow key={profile.id} profile={profile} />
-          ))}
-        </View>
-      ) : (
-        <Empty
-          title="条件に合う候補がいません"
-          body="絞り込み条件を変えてみてください。"
-        />
-      )}
-    </Screen>
+        ) : (
+          <Empty
+            mascot="tired"
+            title="条件に合う候補がいません"
+            body="絞り込み条件を変えてみてください。"
+          />
+        )}
+        <View style={{ height: 20 }} />
+      </Screen>
+    </View>
   );
 }

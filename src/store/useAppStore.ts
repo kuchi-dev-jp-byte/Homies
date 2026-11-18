@@ -1,4 +1,12 @@
-import type { Interest } from "../data/types";
+import { deleteOwnedPost, withoutDeletedPosts } from "../lib/postActions";
+import { stickerCaption, type StickerId } from "../data/stickers";
+import {
+  demoQuickMembers,
+  trialDuration,
+  type GroupChat,
+  type QuickTopic,
+} from "../lib/groups";
+import type { DirectMessage, Interest } from "../data/types";
 import { staffProfile } from "../data/accounts";
 import { CARDS_ENABLED } from "../lib/features";
 import {
@@ -16,7 +24,11 @@ import { validatedMessage } from "../lib/chat";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { initialPosts, profiles } from "../data/mock";
+import {
+  communities as initialCommunities,
+  initialPosts,
+  profiles,
+} from "../data/mock";
 import {
   Homework,
   Instant,
@@ -37,6 +49,14 @@ interface AppState extends SocialState {
   readSocial: () => void;
   readMatches: () => void;
 
+  communities: import("../data/types").Community[];
+  saveCommunity: (value: import("../data/types").Community) => void;
+  updateGroup: (
+    id: string,
+    patch: { name: string; icon?: string; members: string[] },
+  ) => void;
+  reposted: string[];
+  toggleRepost: (id: string) => void;
   role: "student" | "teacher";
   setDemoRole: (role: "student" | "teacher") => void;
   homework: Homework[];
@@ -49,6 +69,18 @@ interface AppState extends SocialState {
   publishInstant: (uri: string, caption?: string) => void;
   receiveDemoInstant: () => void;
   viewInstant: (id: string) => void;
+  groups: GroupChat[];
+  createGroup: (name: string, members: string[]) => string | undefined;
+  createQuickGroup: (topic: QuickTopic) => string | undefined;
+  sendGroupMessage: (id: string, body: string, stickerId?: StickerId) => void;
+  reactToGroupMessage: (
+    id: string,
+    messageId: string,
+    reaction: string,
+  ) => void;
+  extendGroup: (id: string) => void;
+  leaveGroup: (id: string) => void;
+  voteForGroup: (id: string) => void;
   noteLikes: Record<string, string>;
   toggleNoteLike: (authorId: string, note: string) => void;
   ownNoteAt: string | null;
@@ -58,12 +90,14 @@ interface AppState extends SocialState {
   playCard: (action: "hit" | "stand") => void;
 
   startDirect: (id: string) => void;
-  directMessages: Record<string, { body: string; time: string }[]>;
+  directMessages: Record<string, DirectMessage[]>;
   ownNote: string;
   setOwnNote: (text: string) => void;
-  sendDirect: (id: string, body: string) => void;
+  sendDirect: (id: string, body: string, stickerId?: StickerId) => void;
   me: Profile;
   posts: Post[];
+  deletedPostIds: string[];
+  deletePost: (id: string) => boolean;
   liked: string[];
   saved: string[];
   staffSaved: string[];
@@ -71,7 +105,11 @@ interface AppState extends SocialState {
   comments: Comment[];
   chatMessages: ChatMessage[];
   chatDrafts: Record<string, string>;
-  sendMessage: (communityId: string, body: string) => boolean;
+  sendMessage: (
+    communityId: string,
+    body: string,
+    stickerId?: StickerId,
+  ) => boolean;
   setChatDraft: (communityId: string, body: string) => void;
   actions: Record<string, MatchingAction>;
   incomingInterests: string[];
@@ -104,6 +142,9 @@ interface AppState extends SocialState {
 const toggle = (items: string[], id: string) =>
   items.includes(id) ? items.filter((x) => x !== id) : [...items, id];
 const defaults = () => ({
+  communities: initialCommunities,
+  reposted: [] as string[],
+  groups: [] as GroupChat[],
   teacherProfile: staffProfile,
   customInterests: [] as Interest[],
   friends: ["mio", "haruka", "yuto"],
@@ -134,6 +175,7 @@ const defaults = () => ({
   ownNote: "",
   me: initialProfile,
   posts: initialPosts,
+  deletedPostIds: [] as string[],
   liked: [],
   saved: [],
   staffSaved: [],
@@ -154,6 +196,199 @@ export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       ...defaults(),
+      saveCommunity: (value) =>
+        set((s) => ({
+          communities: [
+            ...s.communities.filter((c) => c.id !== value.id),
+            value,
+          ],
+          joined: [...new Set([...s.joined, value.id])],
+        })),
+      updateGroup: (id, patch) =>
+        set((s) => ({
+          groups: s.groups.map((g) =>
+            g.id === id && g.ownerId === s.me.id
+              ? {
+                  ...g,
+                  ...patch,
+                  members: [...new Set([s.me.id, ...patch.members])],
+                }
+              : g,
+          ),
+        })),
+      toggleRepost: (id) => set((s) => ({ reposted: toggle(s.reposted, id) })),
+      createGroup: (name, members) => {
+        const s = get();
+        const eligible = [...new Set(members)].filter(
+          (id) => s.friends.includes(id) && !s.blocked.includes(id),
+        );
+        if (s.role !== "student" || eligible.length < 2 || !name.trim()) return;
+        const id = `group-${Date.now()}`;
+        set({
+          groups: [
+            {
+              id,
+              ownerId: s.me.id,
+              name: name.trim().slice(0, 40),
+              members: [s.me.id, ...eligible],
+              messages: [],
+            },
+            ...s.groups,
+          ],
+        });
+        return id;
+      },
+      createQuickGroup: (topic) => {
+        const s = get();
+        if (s.role !== "student") return;
+        const current = s.groups.find(
+          (group) =>
+            group.trial &&
+            group.ownerId === s.me.id &&
+            !group.members.some((id) => s.blocked.includes(id)),
+        );
+        if (current) return current.id;
+        const people = demoQuickMembers(s.me, profiles, s.blocked, topic);
+        if (people.length < 2) return;
+        const id = `quick-${Date.now()}`;
+        set({
+          groups: [
+            {
+              id,
+              ownerId: s.me.id,
+              name: `クイックマッチ · ${topic}`,
+              members: [s.me.id, ...people.map((person) => person.id)],
+              messages: [
+                {
+                  id: `${id}-hello`,
+                  authorId: people[0].id,
+                  body: "よろしく！まずはお題から話してみよう 🙌",
+                  createdAt: new Date().toISOString(),
+                },
+              ],
+              trial: {
+                topic,
+                endsAt: Date.now() + trialDuration,
+                // Sample participants agree in advance so the local flow can be tried.
+                votes: people.map((person) => person.id),
+              },
+            },
+            ...s.groups,
+          ],
+        });
+        return id;
+      },
+      sendGroupMessage: (id, body, stickerId) => {
+        const content = stickerId ? stickerCaption(stickerId) : body;
+        const trimmed = content.trim();
+        if (!trimmed || trimmed.length > 1000) return;
+        set((s) => ({
+          groups: s.groups.map((group) =>
+            group.id === id &&
+            group.ownerId === s.me.id &&
+            s.role === "student" &&
+            (!group.trial || group.trial.endsAt > Date.now())
+              ? {
+                  ...group,
+                  messages: [
+                    ...group.messages,
+                    {
+                      id: `${Date.now()}-${group.messages.length}`,
+                      authorId: s.me.id,
+                      body: trimmed,
+                      stickerId,
+                      createdAt: new Date().toISOString(),
+                    },
+                  ],
+                }
+              : group,
+          ),
+        }));
+      },
+      reactToGroupMessage: (id, messageId, reaction) =>
+        set((s) => ({
+          groups: s.groups.map((group) =>
+            group.id === id &&
+            group.ownerId === s.me.id &&
+            s.role === "student" &&
+            (!group.trial || group.trial.endsAt > Date.now())
+              ? {
+                  ...group,
+                  messages: group.messages.map((message) =>
+                    message.id === messageId &&
+                    !s.blocked.includes(message.authorId)
+                      ? {
+                          ...message,
+                          reaction:
+                            message.reaction === reaction
+                              ? undefined
+                              : reaction,
+                        }
+                      : message,
+                  ),
+                }
+              : group,
+          ),
+        })),
+      extendGroup: (id) =>
+        set((s) => ({
+          groups: s.groups.map((group) =>
+            s.role === "student" &&
+            group.id === id &&
+            group.trial &&
+            !group.trial.extended &&
+            group.trial.endsAt > Date.now()
+              ? {
+                  ...group,
+                  trial: {
+                    ...group.trial,
+                    endsAt: group.trial.endsAt + trialDuration,
+                    extended: true,
+                  },
+                }
+              : group,
+          ),
+        })),
+      leaveGroup: (id) =>
+        set((s) => ({
+          groups:
+            s.role === "student"
+              ? s.groups.filter((group) => group.id !== id)
+              : s.groups,
+        })),
+      voteForGroup: (id) =>
+        set((s) => {
+          const group = s.groups.find(
+            (item) => item.id === id && item.ownerId === s.me.id,
+          );
+          if (
+            s.role !== "student" ||
+            !group?.trial ||
+            group.trial.endsAt > Date.now() ||
+            group.members.some((member) => s.blocked.includes(member))
+          )
+            return s;
+          const votes = [...new Set([...group.trial.votes, s.me.id])];
+          if (!group.members.every((member) => votes.includes(member)))
+            return s;
+          return {
+            friends: [
+              ...new Set([
+                ...s.friends,
+                ...group.members.filter((member) => member !== s.me.id),
+              ]),
+            ],
+            groups: s.groups.map((item) =>
+              item.id === id
+                ? {
+                    ...item,
+                    name: `いつメン · ${group.trial?.topic}`,
+                    trial: undefined,
+                  }
+                : item,
+            ),
+          };
+        }),
       toggleNoteLike: (authorId, note) =>
         set((s) => {
           const key = `${s.role}:${authorId}`;
@@ -338,8 +573,14 @@ export const useAppStore = create<AppState>()(
         set((s) => ({
           chatDrafts: { ...s.chatDrafts, [communityId]: body.slice(0, 1000) },
         })),
-      sendMessage: (communityId, body) => {
-        const text = validatedMessage(communityId, body, get().joined);
+      sendMessage: (communityId, body, stickerId) => {
+        const content = stickerId ? stickerCaption(stickerId) : body;
+        const text = validatedMessage(
+          communityId,
+          content,
+          get().joined,
+          get().communities,
+        );
         if (text === null) return false;
         set((s) => ({
           chatMessages: [
@@ -349,10 +590,13 @@ export const useAppStore = create<AppState>()(
               communityId,
               authorId: "me",
               body: text,
+              stickerId,
               createdAt: new Date().toISOString(),
             },
           ],
-          chatDrafts: { ...s.chatDrafts, [communityId]: "" },
+          chatDrafts: stickerId
+            ? s.chatDrafts
+            : { ...s.chatDrafts, [communityId]: "" },
         }));
         return true;
       },
@@ -369,21 +613,25 @@ export const useAppStore = create<AppState>()(
             ? { directMessages: { ...s.directMessages, [id]: [] } }
             : {},
         ),
-      sendDirect: (id, body) => {
+      sendDirect: (id, body, stickerId) => {
+        const content = stickerId ? stickerCaption(stickerId) : body;
         if (
           !get().friends.includes(id) ||
-          !body.trim() ||
+          !content.trim() ||
           get().blocked.includes(id)
         )
           return;
+        const createdAt = new Date();
         set((s) => ({
           directMessages: {
             ...s.directMessages,
             [id]: [
               ...(s.directMessages[id] ?? []),
               {
-                body: body.trim().slice(0, 1000),
-                time: new Date().toLocaleTimeString("ja-JP", {
+                body: content.trim().slice(0, 1000),
+                stickerId,
+                createdAt: createdAt.toISOString(),
+                time: createdAt.toLocaleTimeString("ja-JP", {
                   hour: "2-digit",
                   minute: "2-digit",
                 }),
@@ -432,6 +680,15 @@ export const useAppStore = create<AppState>()(
             post.kind === "school" ? false : s.notificationsRead,
           toast: "投稿を公開しました！",
         }));
+      },
+      deletePost: (id) => {
+        const state = get();
+        const viewerId =
+          state.role === "teacher" ? state.teacherProfile.id : state.me.id;
+        const next = deleteOwnedPost(state, id, viewerId);
+        if (!next) return false;
+        set({ ...next, toast: "投稿を削除しました" });
+        return true;
       },
       addComment: (postId, body) => {
         if (
@@ -544,13 +801,15 @@ export const useAppStore = create<AppState>()(
         set((s) => ({ completedTasks: toggle(s.completedTasks, id) })),
       readNotifications: () => set({ notificationsRead: true }),
       notify: (toast) => set({ toast }),
-      reset: () => set(defaults()),
+      reset: () => set((s) => ({ ...defaults(), role: s.role })),
     }),
     {
       name: "homies-demo-v1",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: ({ toast, ...state }) => state,
-      merge: (persisted, current) => {
+      skipHydration: true,
+      merge: (persisted, state) => {
+        const current: AppState = { ...state, ...defaults() };
         const old = persisted as Partial<AppState> | undefined;
         const next = { ...current, ...old };
         if (old?.me && old.me.banner === undefined) {
@@ -567,6 +826,7 @@ export const useAppStore = create<AppState>()(
             ...current.posts.filter((post) => !existing.has(post.id)),
           ];
         }
+        next.posts = withoutDeletedPosts(next.posts, next.deletedPostIds);
         const mutual = Object.keys(next.actions).filter((id) =>
           isMutualInterest(
             id,

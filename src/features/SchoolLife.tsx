@@ -33,7 +33,7 @@ export function SchoolLife() {
       label: "先生からの宿題",
       summary: unconfirmed ? `未確認 ${unconfirmed}件` : "すべて確認済み",
       icon: ClipboardList,
-      color: "#126FAE",
+      color: C.accent,
       path: "/homework" as const,
     },
     {
@@ -47,7 +47,7 @@ export function SchoolLife() {
       label: "時間割",
       summary: "4月25日（木） · 1〜6限",
       icon: CalendarDays,
-      color: "#7054B5",
+      color: C.accent,
       path: "/school?section=timetable" as const,
     },
     {

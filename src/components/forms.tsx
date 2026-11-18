@@ -34,16 +34,16 @@ export function Field({
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor="#B1B1B1"
+        placeholderTextColor={C.placeholder}
         multiline={multiline}
         keyboardType={keyboard}
         maxLength={maxLength}
         textAlignVertical={multiline ? "top" : "center"}
         style={{
-          backgroundColor: "white",
+          backgroundColor: C.surface,
           borderRadius: 13,
           borderWidth: 1,
-          borderColor: "#EBEBEB",
+          borderColor: C.line,
           padding: 14,
           minHeight: multiline ? 120 : 48,
           color: C.ink,

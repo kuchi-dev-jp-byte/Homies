@@ -6,10 +6,11 @@ export function validatedMessage(
   communityId: string,
   body: string,
   joined: string[],
+  available = communities,
 ): string | null {
   if (
     !joined.includes(communityId) ||
-    !communities.some((c) => c.id === communityId)
+    !available.some((c) => c.id === communityId)
   )
     return null;
   const result = messageSchema.safeParse(body);

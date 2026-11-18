@@ -1,3 +1,4 @@
+import type { StickerId } from "./stickers";
 export type InterestKind =
   "game" | "music" | "art" | "study" | "club" | "other";
 export type Interest = { label: string; kind: InterestKind };
@@ -19,6 +20,7 @@ export type Profile = {
 };
 export type PostKind = "school" | "board" | "student";
 export type Post = {
+  quoteId?: string;
   id: string;
   authorId: string;
   createdAt?: string;
@@ -39,6 +41,7 @@ export type Post = {
   communityId?: string;
 };
 export type Community = {
+  ownerId?: string;
   id: string;
   name: string;
   category: string;
@@ -57,6 +60,7 @@ export type Comment = {
 export type MatchingAction = "interested" | "skipped";
 
 export type ChatMessage = {
+  stickerId?: StickerId;
   id: string;
   communityId: string;
   authorId: string;
@@ -80,4 +84,12 @@ export type Instant = {
   authorId: string;
   uri: string;
   createdAt: string;
+};
+
+export type DirectMessage = {
+  stickerId?: StickerId;
+  body: string;
+  time: string;
+  authorId?: string;
+  createdAt?: string;
 };

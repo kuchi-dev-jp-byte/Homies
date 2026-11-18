@@ -12,6 +12,7 @@ import {
   Avatar,
   C,
   Screen,
+  SegmentTabs,
   Empty,
   Loading,
   styles,
@@ -107,13 +108,13 @@ export default function UserSearch() {
             paddingHorizontal: 13,
             minHeight: 48,
             borderWidth: 1,
-            borderColor: focused ? C.purple : C.line,
+            borderColor: focused ? C.accent : C.line,
             borderRadius: 14,
             backgroundColor: "white",
             marginBottom: 18,
           }}
         >
-          <Search size={19} color={focused ? C.purple : C.muted} />
+          <Search size={19} color={focused ? C.accent : C.muted} />
           <TextInput
             ref={input}
             accessibilityLabel="投稿やユーザーを検索"
@@ -150,40 +151,8 @@ export default function UserSearch() {
             </Pressable>
           )}
         </View>
-        <View
-          accessibilityRole="tablist"
-          style={{
-            flexDirection: "row",
-            borderBottomWidth: 1,
-            borderColor: C.line,
-            marginBottom: 14,
-          }}
-        >
-          {tabs.map((label) => (
-            <Pressable
-              key={label}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: tab === label }}
-              onPress={() => setTab(label)}
-              style={{
-                flex: 1,
-                alignItems: "center",
-                paddingVertical: 12,
-                borderBottomWidth: 2,
-                borderColor: tab === label ? C.purple : "transparent",
-              }}
-            >
-              <Text
-                style={{
-                  color: tab === label ? C.purple : C.muted,
-                  fontSize: 14,
-                  fontWeight: "700",
-                }}
-              >
-                {label}
-              </Text>
-            </Pressable>
-          ))}
+        <View style={{ marginBottom: 14 }}>
+          <SegmentTabs items={tabs} value={tab} onChange={setTab} />
         </View>
         {tab === "トレンド" ? (
           <View style={{ marginHorizontal: -20 }}>

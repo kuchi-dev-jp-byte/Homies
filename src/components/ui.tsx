@@ -1,3 +1,5 @@
+import { Mascot } from "./Mascot";
+import type { StickerId } from "../data/stickers";
 import { useCurrentProfile } from "../lib/hooks";
 import { imageSource } from "../data/images";
 import { ReactNode, useEffect } from "react";
@@ -35,13 +37,17 @@ import { Interest, InterestKind } from "../data/types";
 import { useAppStore } from "../store/useAppStore";
 export const C = {
   purple: "#171717",
-  accent: "#1D9BF0",
-  tagInk: "#086782",
-  tagBg: "#E1F6FD",
+  accent: "#3048EE",
+  accentSoft: "#EEF0FF",
+  lime: "#D1FA00",
+  limeSoft: "#ECFFA3",
+  surface: "#F4F4F6",
+  tagInk: "#3042CA",
+  tagBg: "#EEF0FF",
   ink: "#171717",
   muted: "#626262",
   placeholder: "#909090",
-  line: "#E7E7E7",
+  line: "#E8E8ED",
   bg: "#FFFFFF",
   pink: "#BC2342",
 };
@@ -50,7 +56,7 @@ export const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 19,
     borderWidth: 1,
-    borderColor: "#F1F1F1",
+    borderColor: C.line,
     shadowColor: "#515151",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.035,
@@ -186,7 +192,7 @@ export function Header() {
           label="学校からの通知"
           onPress={() => router.push("/notifications")}
         >
-          <Bell size={23} color="#616161" />
+          <Bell size={23} color={C.ink} />
           {(!read || unreadHomework) && (
             <View
               style={{
@@ -291,41 +297,69 @@ export function DetailScreen({
   title,
   children,
   footer,
+  hideBack = false,
+  centered = false,
+  subtitle,
+  headerAction,
+  dark = false,
 }: {
   title: string;
   children: ReactNode;
   footer?: ReactNode;
+  hideBack?: boolean;
+  centered?: boolean;
+  subtitle?: string;
+  headerAction?: ReactNode;
+  dark?: boolean;
 }) {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: dark ? "#090909" : C.bg }}>
       <View
         className="flex-row items-center"
         style={{
           paddingHorizontal: 10,
           paddingVertical: 9,
           borderBottomWidth: 1,
-          borderColor: C.line,
-          backgroundColor: "white",
+          borderColor: dark ? "#262626" : C.line,
+          backgroundColor: dark ? "#090909" : "white",
         }}
       >
-        <IconButton
-          label="戻る"
-          onPress={() =>
-            router.canGoBack() ? router.back() : router.replace("/")
-          }
-        >
-          <ArrowLeft color={C.ink} size={22} />
-        </IconButton>
-        <Text
+        {!hideBack && (
+          <IconButton
+            label="戻る"
+            onPress={() =>
+              router.canGoBack() ? router.back() : router.replace("/")
+            }
+          >
+            <ArrowLeft color={dark ? "white" : C.ink} size={22} />
+          </IconButton>
+        )}
+        <View
           style={{
-            fontSize: 17,
-            fontWeight: "700",
-            color: C.ink,
-            marginLeft: 5,
+            flex: 1,
+            minWidth: 0,
+            alignItems: centered ? "center" : "flex-start",
+            paddingHorizontal: 5,
           }}
         >
-          {title}
-        </Text>
+          <Text
+            numberOfLines={1}
+            style={{
+              fontSize: 17,
+              fontWeight: "800",
+              color: dark ? "white" : C.ink,
+            }}
+          >
+            {title}
+          </Text>
+          {!!subtitle && (
+            <Text numberOfLines={1} style={styles.muted}>
+              {subtitle}
+            </Text>
+          )}
+        </View>
+        {headerAction ??
+          (centered && !hideBack ? <View style={{ width: 44 }} /> : null)}
       </View>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -362,8 +396,8 @@ export function Button({
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => ({
-        borderRadius: small ? 20 : 14,
-        backgroundColor: secondary ? "#ECECEC" : "#0876BD",
+        borderRadius: 28,
+        backgroundColor: secondary ? C.surface : C.accent,
         minHeight: small ? 32 : 48,
         paddingHorizontal: small ? 15 : 20,
         alignItems: "center",
@@ -383,6 +417,70 @@ export function Button({
     </Pressable>
   );
 }
+export function SegmentTabs<T extends string>({
+  items,
+  value,
+  onChange,
+  labels,
+}: {
+  items: readonly T[];
+  value: T;
+  onChange: (value: T) => void;
+  labels?: Partial<Record<T, string>>;
+}) {
+  return (
+    <View
+      accessibilityRole="tablist"
+      style={{
+        flexDirection: "row",
+        gap: 4,
+        borderBottomWidth: 1,
+        borderColor: C.line,
+      }}
+    >
+      {items.map((item) => {
+        const selected = item === value;
+        return (
+          <Pressable
+            key={item}
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
+            onPress={() => onChange(item)}
+            style={{
+              flex: 1,
+              borderBottomWidth: 2,
+              borderBottomColor: selected ? C.ink : "transparent",
+              paddingBottom: 5,
+            }}
+          >
+            <View
+              style={{
+                minHeight: 38,
+                borderRadius: 22,
+                backgroundColor: selected ? C.lime : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 4,
+              }}
+            >
+              <Text
+                style={{
+                  color: selected ? C.ink : C.muted,
+                  fontSize: 13,
+                  fontWeight: selected ? "800" : "700",
+                  textAlign: "center",
+                }}
+              >
+                {labels?.[item] ?? item}
+              </Text>
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export function Chip({
   label,
   active = false,
@@ -402,16 +500,16 @@ export function Chip({
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderRadius: 24,
-        backgroundColor: active ? C.purple : "white",
+        backgroundColor: active ? C.lime : C.surface,
         borderWidth: 1,
-        borderColor: active ? C.purple : C.line,
+        borderColor: active ? C.lime : C.line,
       }}
     >
       <Text
         style={{
           fontSize: 12,
           fontWeight: "600",
-          color: active ? "white" : "#747474",
+          color: active ? C.ink : C.muted,
         }}
       >
         {label}
@@ -531,16 +629,20 @@ export function Empty({
   action,
   onPress,
   icon = "message",
+  mascot,
 }: {
   title: string;
   body: string;
+  mascot?: StickerId;
   icon?: "bookmark" | "users" | "message";
   action?: string;
   onPress?: () => void;
 }) {
   return (
     <View style={{ padding: 30, alignItems: "center", gap: 14 }}>
-      {icon === "bookmark" ? (
+      {mascot ? (
+        <Mascot id={mascot} size={103} />
+      ) : icon === "bookmark" ? (
         <Bookmark size={30} color={C.purple} />
       ) : icon === "users" ? (
         <Users size={30} color={C.purple} />

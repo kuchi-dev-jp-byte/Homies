@@ -1,3 +1,4 @@
+import { useVisiblePosts } from "../src/lib/hooks";
 import { anonymousAllowed } from "../src/lib/activity";
 import { imageSource } from "../src/data/images";
 import { useState } from "react";
@@ -13,14 +14,17 @@ import { useAppStore } from "../src/store/useAppStore";
 import { Post } from "../src/data/types";
 export default function CreatePost() {
   const {
+    quoteId,
     communityId,
     kind: initialKind,
     anonymous: anonymousParam,
   } = useLocalSearchParams<{
+    quoteId?: string;
     communityId?: string;
     kind?: string;
     anonymous?: string;
   }>();
+  const quoted = useVisiblePosts().find((p) => p.id === quoteId);
   const staff = useAppStore((s) => s.role === "teacher");
   const [kind, setKind] = useState<Post["kind"]>(
       staff && initialKind === "school"
@@ -57,6 +61,10 @@ export default function CreatePost() {
   };
   const submit = () => {
     if (busy) return;
+    if (quoteId && !quoted) {
+      setError("引用元の投稿は表示できません");
+      return;
+    }
     const notice = staff && kind === "school";
     const parsed = postSchema.safeParse({
       kind: notice ? "board" : kind,
@@ -89,6 +97,7 @@ export default function CreatePost() {
     setBusy(true);
     add({
       ...parsed.data,
+      quoteId,
       kind,
       secret: !staff && secret,
       anonymous: !staff && kind === "student" && anonymous,
@@ -123,6 +132,20 @@ export default function CreatePost() {
   };
   return (
     <DetailScreen title={communityId ? "コミュニティに投稿" : "新しい投稿"}>
+      {quoted && (
+        <View
+          style={{
+            padding: 14,
+            borderWidth: 1,
+            borderColor: C.line,
+            borderRadius: 14,
+            marginBottom: 16,
+          }}
+        >
+          <Text style={styles.muted}>引用する投稿</Text>
+          <Text style={styles.text}>{quoted.body}</Text>
+        </View>
+      )}
       <View className="flex-row" style={{ gap: 8, marginBottom: 24 }}>
         {(staff && !communityId
           ? (["student", "board", "school"] as const)

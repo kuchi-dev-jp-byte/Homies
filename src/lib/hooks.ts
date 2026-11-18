@@ -9,12 +9,10 @@ export const useProfiles = () =>
     queryFn: repository.getProfiles,
     staleTime: Infinity,
   });
-export const useCommunities = () =>
-  useQuery({
-    queryKey: ["communities"],
-    queryFn: repository.getCommunities,
-    staleTime: Infinity,
-  });
+export function useCommunities() {
+  const data = useAppStore((s) => s.communities);
+  return { data, isLoading: false };
+}
 export function useCurrentProfile() {
   return useAppStore((s) => (s.role === "teacher" ? s.teacherProfile : s.me));
 }

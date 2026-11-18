@@ -1,6 +1,6 @@
 import { profiles } from "../../src/data/mock";
 import { matchedProfiles } from "../../src/lib/matching";
-import { Text, useWindowDimensions } from "react-native";
+import { Text, View, useWindowDimensions } from "react-native";
 import { Tabs } from "expo-router";
 import {
   Home,
@@ -13,6 +13,24 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppStore } from "../../src/store/useAppStore";
 import { C } from "../../src/components/ui";
+const tabIcon = (Icon: typeof Home) =>
+  function TabIcon({ color, focused }: { color: string; focused: boolean }) {
+    return (
+      <View
+        style={{
+          width: 36,
+          height: 29,
+          borderRadius: 12,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: focused ? C.lime : "transparent",
+        }}
+      >
+        <Icon size={22} color={color} strokeWidth={focused ? 2.4 : 2} />
+      </View>
+    );
+  };
+
 export default function TabLayout() {
   const matchCount = useAppStore((s) =>
     s.role === "teacher"
@@ -31,7 +49,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: C.purple,
+        tabBarActiveTintColor: C.ink,
         tabBarInactiveTintColor: C.muted,
         tabBarLabelPosition: "below-icon",
         tabBarLabel: ({ children, color }) => (
@@ -65,13 +83,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "ホーム",
-          tabBarIcon: ({ color, focused }) => (
-            <Home
-              size={24}
-              color={color}
-              fill={focused ? color : "transparent"}
-            />
-          ),
+          tabBarIcon: tabIcon(Home),
         }}
       />
       <Tabs.Screen
@@ -84,27 +96,21 @@ export default function TabLayout() {
             color: "#FFFFFF",
             fontWeight: "700",
           },
-          tabBarIcon: ({ color, focused }) => (
-            <Flame
-              size={24}
-              color={color}
-              fill={focused ? color : "transparent"}
-            />
-          ),
+          tabBarIcon: tabIcon(Flame),
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
           title: "検索",
-          tabBarIcon: ({ color }) => <Search size={23} color={color} />,
+          tabBarIcon: tabIcon(Search),
         }}
       />
       <Tabs.Screen
         name="schoolwork"
         options={{
           title: "学校",
-          tabBarIcon: ({ color }) => <School size={24} color={color} />,
+          tabBarIcon: tabIcon(School),
         }}
       />
       <Tabs.Screen name="trends" options={{ href: null }} />
@@ -112,14 +118,14 @@ export default function TabLayout() {
         name="communities"
         options={{
           title: "コミュニティ",
-          tabBarIcon: ({ color }) => <Users size={24} color={color} />,
+          tabBarIcon: tabIcon(Users),
         }}
       />
       <Tabs.Screen
         name="chats"
         options={{
           title: "チャット",
-          tabBarIcon: ({ color }) => <MessageCircle size={24} color={color} />,
+          tabBarIcon: tabIcon(MessageCircle),
         }}
       />
     </Tabs>

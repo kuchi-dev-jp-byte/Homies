@@ -5,9 +5,10 @@ import { Circle, CircleCheck } from "lucide-react-native";
 import { Button, C, DetailScreen, Empty, styles } from "../src/components/ui";
 import { useAppStore } from "../src/store/useAppStore";
 export default function Safety() {
-  const { userId, postId } = useLocalSearchParams<{
+  const { userId, postId, mode } = useLocalSearchParams<{
       userId?: string;
       postId?: string;
+      mode?: string;
     }>(),
     [reason, setReason] = useState("不適切な内容"),
     report = useAppStore((s) => s.report),
@@ -75,22 +76,25 @@ export default function Safety() {
       >
         通報内容を記録する
       </Button>
-      {userId && userId !== "school" && userId !== "me" && (
-        <View style={{ marginTop: 18 }}>
-          <Button
-            secondary
-            onPress={() => {
-              block(userId);
-              router.replace("/");
-            }}
-          >
-            このユーザーを非表示にする
-          </Button>
-          <Text style={[styles.muted, { marginTop: 12 }]}>
-            ホームとマッチングに表示されなくなります。設定でデータをリセットすると解除されます。
-          </Text>
-        </View>
-      )}
+      {mode !== "report" &&
+        userId &&
+        userId !== "school" &&
+        userId !== "me" && (
+          <View style={{ marginTop: 18 }}>
+            <Button
+              secondary
+              onPress={() => {
+                block(userId);
+                router.replace("/");
+              }}
+            >
+              このユーザーを非表示にする
+            </Button>
+            <Text style={[styles.muted, { marginTop: 12 }]}>
+              ホームとマッチングに表示されなくなります。設定でデータをリセットすると解除されます。
+            </Text>
+          </View>
+        )}
     </DetailScreen>
   );
 }

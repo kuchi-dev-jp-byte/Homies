@@ -224,8 +224,11 @@ export function ProfileContent({
               paddingHorizontal: 20,
               paddingVertical: 14,
               alignItems: "center",
-              borderBottomWidth: 3,
-              borderColor: profileTab === t ? C.purple : "transparent",
+              borderBottomWidth: 2,
+              borderColor: profileTab === t ? C.ink : "transparent",
+              backgroundColor: profileTab === t ? C.lime : "transparent",
+              borderTopLeftRadius: 18,
+              borderTopRightRadius: 18,
             }}
           >
             <Text
@@ -270,6 +273,7 @@ export function ProfileContent({
             savedPosts.map((p) => <PostCard key={p.id} post={p} />)
           ) : (
             <Empty
+              mascot="fav"
               icon="bookmark"
               title="保存した投稿はまだありません"
               body="投稿のブックマークを押すと保存できます。"
