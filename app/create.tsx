@@ -1,3 +1,4 @@
+import { extractHashtags } from "../src/lib/hashtags";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCurrentProfile, useVisiblePosts } from "../src/lib/hooks";
 import { anonymousAllowed } from "../src/lib/activity";
@@ -161,11 +162,16 @@ export default function CreatePost() {
       authorId: "me",
       title: kind === "student" ? "" : title.trim(),
       image,
-      tags: tags
-        .split(/[,、]/)
-        .map((t) => t.trim())
-        .filter(Boolean)
-        .slice(0, 8),
+      tags: [
+        ...new Set([
+          ...extractHashtags(parsed.data.body),
+          ...tags
+            .split(/[,、]/)
+            .map((tag) => tag.trim())
+            .filter(Boolean)
+            .slice(0, 8),
+        ]),
+      ],
       time: "たった今",
       likes: 0,
       commentCount: 0,
@@ -253,6 +259,7 @@ export default function CreatePost() {
                   <Avatar uri={profile.avatar} size={40} />
                   <TextInput
                     ref={bodyInput}
+                    nativeID="post-composer-body"
                     accessibilityLabel="本文"
                     placeholder="いまどうしてる？"
                     placeholderTextColor={C.placeholder}

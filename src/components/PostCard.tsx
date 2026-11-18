@@ -1,3 +1,4 @@
+import { hashtagPattern } from "../lib/hashtags";
 import { useState } from "react";
 import { PostMenu } from "./PostMenu";
 import { useVisiblePosts, useCurrentProfile } from "../lib/hooks";
@@ -123,7 +124,7 @@ export function PostCard({
     </>
   );
   const renderHashtags = (value: string) =>
-    value.split(/([#＃][^\s#＃、。！!？?]+)/g).map((part, index) =>
+    value.split(hashtagPattern).map((part, index) =>
       index % 2 ? (
         <Text
           key={index}

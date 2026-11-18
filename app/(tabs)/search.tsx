@@ -1,3 +1,4 @@
+import { extractHashtags } from "../../src/lib/hashtags";
 import { useEffect, useRef, useState } from "react";
 import { TextInput, View, Pressable, Text } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -67,13 +68,7 @@ export default function UserSearch() {
   const postResults = searching
     ? posts.filter((p) => {
         if (exactTag) {
-          return [
-            ...p.tags,
-            ...Array.from(
-              `${p.title} ${p.body}`.matchAll(/[#＃]([^\s#＃、。！!？?]+)/g),
-              (match) => match[1],
-            ),
-          ].some(
+          return [...p.tags, ...extractHashtags(`${p.title} ${p.body}`)].some(
             (tag) => normalize(tag).replace(/^#/, "") === normalize(exactTag),
           );
         }

@@ -1,3 +1,4 @@
+import { extractHashtags } from "./hashtags";
 import { Post } from "../data/types";
 export function dayKey(now = new Date()) {
   return new Intl.DateTimeFormat("sv-SE", {
@@ -65,10 +66,7 @@ export function trends(posts: Post[], now = new Date()) {
     if (age < 0 || age > 14 * 86400000) continue;
     const tags = [
       ...post.tags,
-      ...Array.from(
-        `${post.title} ${post.body}`.matchAll(/[#＃]([^\s#＃、。！!？?]+)/g),
-        (m) => m[1],
-      ),
+      ...extractHashtags(`${post.title} ${post.body}`),
     ];
     for (const tag of new Set(tags.map((t) => t.trim()).filter(Boolean))) {
       const entry = counts.get(tag) ?? { current: 0, previous: 0 };
