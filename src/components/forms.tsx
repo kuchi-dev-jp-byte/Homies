@@ -1,6 +1,7 @@
 import { Text, TextInput, View } from "react-native";
 import { C } from "./ui";
 export function Field({
+  inputRef,
   label,
   value,
   onChange,
@@ -9,6 +10,7 @@ export function Field({
   keyboard = "default",
   maxLength,
 }: {
+  inputRef?: React.Ref<TextInput>;
   label: string;
   value: string;
   onChange: (v: string) => void;
@@ -30,6 +32,7 @@ export function Field({
         {label}
       </Text>
       <TextInput
+        ref={inputRef}
         accessibilityLabel={label}
         value={value}
         onChangeText={onChange}

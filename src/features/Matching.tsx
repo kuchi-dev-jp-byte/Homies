@@ -567,7 +567,7 @@ export default function Matching() {
             </View>
             {!matched.length && (
               <Empty
-                icon="users"
+                mascot="heart"
                 title="まだマッチした相手はいません"
                 body="お互いに「気になる」を送ると、ここに表示されます。"
                 action="相手を見つける"

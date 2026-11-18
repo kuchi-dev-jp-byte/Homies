@@ -51,14 +51,18 @@ export default function NoteDetail() {
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <TextInput
           accessibilityLabel="ノートへの返信"
+          autoFocus
           placeholder="ノートに返信…"
           placeholderTextColor={C.placeholder}
           value={reply}
           onChangeText={setReply}
           maxLength={1000}
           multiline
+          numberOfLines={1}
+          textAlignVertical="center"
           style={{
             flex: 1,
+            fontSize: 16,
             minHeight: 44,
             maxHeight: 110,
             backgroundColor: "#F3F3F3",

@@ -137,7 +137,7 @@ export default function Communities() {
   return (
     <View style={{ flex: 1 }}>
       <Screen>
-        {!search && mode === "参加中" && (
+        {!search && (
           <View style={{ marginHorizontal: 20, marginBottom: 16 }}>
             <MascotBanner
               mascot="game"

@@ -10,7 +10,6 @@ export function FriendButton({ id }: { id: string }) {
   const startDirect = useAppStore((s) => s.startDirect);
   return friends.includes(id) ? (
     <Button
-      secondary
       onPress={() => {
         startDirect(id);
         router.push(`/chat/${id}`);

@@ -60,7 +60,11 @@ function AuthenticatedRoutes() {
       >
         <Stack.Protected guard={demoAuth || signedIn}>
           {applicationRoutes.map((name) => (
-            <Stack.Screen key={name} name={name} />
+            <Stack.Screen
+              key={name}
+              name={name}
+              options={name === "create" ? { animation: "none" } : undefined}
+            />
           ))}
         </Stack.Protected>
         <Stack.Protected guard={demoAuth || !signedIn}>

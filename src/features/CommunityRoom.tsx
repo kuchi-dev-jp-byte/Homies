@@ -416,11 +416,14 @@ export default function CommunityRoom() {
                   placeholder="メッセージを入力"
                   placeholderTextColor="#A0A0A0"
                   multiline
+                  numberOfLines={1}
+                  textAlignVertical="center"
                   maxLength={1000}
                   value={draft}
                   onChangeText={(value) => setDraft(id, value)}
                   style={{
                     flex: 1,
+                    fontSize: 16,
                     minHeight: 44,
                     maxHeight: 120,
                     paddingHorizontal: 15,
@@ -428,7 +431,7 @@ export default function CommunityRoom() {
                     borderRadius: 22,
                     backgroundColor: C.surface,
                     color: C.ink,
-                    fontSize: 14,
+
                     lineHeight: 22,
                   }}
                 />

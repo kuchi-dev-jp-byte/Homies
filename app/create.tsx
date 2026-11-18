@@ -1,8 +1,16 @@
 import { useVisiblePosts } from "../src/lib/hooks";
 import { anonymousAllowed } from "../src/lib/activity";
 import { imageSource } from "../src/data/images";
-import { useState } from "react";
-import { Pressable, Switch, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  TextInput,
+  useWindowDimensions,
+  Pressable,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { ImagePlus, LockKeyhole, UserRound, X } from "lucide-react-native";
@@ -24,6 +32,22 @@ export default function CreatePost() {
     kind?: string;
     anonymous?: string;
   }>();
+  const bodyInput = useRef<TextInput>(null);
+  const { height } = useWindowDimensions();
+  const offset = useRef(new Animated.Value(height)).current;
+  useEffect(() => {
+    const animation = Animated.timing(offset, {
+      toValue: 0,
+      duration: 240,
+      useNativeDriver: true,
+    });
+    animation.start();
+    const timer = setTimeout(() => bodyInput.current?.focus(), 300);
+    return () => {
+      clearTimeout(timer);
+      animation.stop();
+    };
+  }, [offset]);
   const quoted = useVisiblePosts().find((p) => p.id === quoteId);
   const staff = useAppStore((s) => s.role === "teacher");
   const [kind, setKind] = useState<Post["kind"]>(
@@ -131,209 +155,212 @@ export default function CreatePost() {
       });
   };
   return (
-    <DetailScreen title={communityId ? "コミュニティに投稿" : "新しい投稿"}>
-      {quoted && (
-        <View
-          style={{
-            padding: 14,
-            borderWidth: 1,
-            borderColor: C.line,
-            borderRadius: 14,
-            marginBottom: 16,
-          }}
-        >
-          <Text style={styles.muted}>引用する投稿</Text>
-          <Text style={styles.text}>{quoted.body}</Text>
-        </View>
-      )}
-      <View className="flex-row" style={{ gap: 8, marginBottom: 24 }}>
-        {(staff && !communityId
-          ? (["student", "board", "school"] as const)
-          : (["student", "board"] as const)
-        ).map((t) => (
-          <Chip
-            key={t}
-            label={
-              t === "student" ? "投稿" : t === "board" ? "掲示板" : "学校連絡"
-            }
-            active={kind === t}
-            onPress={() => setKind(t)}
-          />
-        ))}
-      </View>
-      {kind !== "student" && (
-        <>
-          <Field
-            label="タイトル"
-            value={title}
-            onChange={setTitle}
-            placeholder="ひと目で内容がわかるタイトル"
-            maxLength={80}
-          />
-          {kind === "board" && (
-            <>
-              <Text
-                style={[
-                  styles.text,
-                  { fontWeight: "700", fontSize: 12, marginBottom: 9 },
-                ]}
-              >
-                カテゴリ
-              </Text>
-              <View
-                className="flex-row flex-wrap"
-                style={{ gap: 6, marginBottom: 20 }}
-              >
-                {["募集", "質問", "落とし物", "イベント", "勉強", "部活"].map(
-                  (c) => (
-                    <Chip
-                      key={c}
-                      label={c}
-                      active={category === c}
-                      onPress={() => setCategory(c)}
-                    />
-                  ),
-                )}
-              </View>
-            </>
-          )}
-        </>
-      )}
-      <Field
-        label="本文"
-        value={body}
-        onChange={setBody}
-        placeholder="今日のできごと、誰かへの質問、仲間の募集…"
-        multiline
-        maxLength={2000}
-      />
-      {image ? (
-        <View style={{ marginBottom: 18 }}>
-          <Image
-            source={imageSource(image)}
-            style={{ width: "100%", height: 180, borderRadius: 14 }}
-          />
-          <Pressable
-            accessibilityLabel="画像を削除"
-            onPress={() => setImage(undefined)}
+    <Animated.View style={{ flex: 1, transform: [{ translateY: offset }] }}>
+      <DetailScreen title={communityId ? "コミュニティに投稿" : "新しい投稿"}>
+        {quoted && (
+          <View
             style={{
-              position: "absolute",
-              right: 10,
-              top: 10,
-              backgroundColor: "white",
-              borderRadius: 20,
-              padding: 8,
+              padding: 14,
+              borderWidth: 1,
+              borderColor: C.line,
+              borderRadius: 14,
+              marginBottom: 16,
             }}
           >
-            <X size={20} color={C.ink} />
-          </Pressable>
-        </View>
-      ) : (
-        <Pressable
-          accessibilityRole="button"
-          onPress={pick}
-          style={{
-            padding: 20,
-            borderWidth: 1,
-            borderStyle: "dashed",
-            borderColor: "#CFCFCF",
-            borderRadius: 15,
-            alignItems: "center",
-            gap: 8,
-            marginBottom: 20,
-            backgroundColor: "#EFEFEF",
-          }}
-        >
-          <ImagePlus size={25} color={C.purple} />
-          <Text style={{ color: C.purple, fontSize: 12 }}>写真を追加</Text>
-        </Pressable>
-      )}
-      <Field
-        label="興味タグ（任意）"
-        value={tags}
-        onChange={setTags}
-        placeholder="イラスト、音楽、文化祭"
-        maxLength={100}
-      />
-      {kind === "board" && category === "募集" && (
-        <>
-          <Field
-            label="募集人数（任意・1〜100人）"
-            value={capacity}
-            onChange={setCapacity}
-            keyboard="number-pad"
-            placeholder="5"
-          />
-          <Field
-            label="締切（任意）"
-            value={deadline}
-            onChange={setDeadline}
-            placeholder="2027-05-01"
-          />
-        </>
-      )}
-      {!staff && (
-        <>
-          <Text
-            style={[
-              styles.text,
-              { fontSize: 12, fontWeight: "700", marginBottom: 9 },
-            ]}
-          >
-            公開範囲
-          </Text>
-          <View className="flex-row" style={{ gap: 7, marginBottom: 22 }}>
-            {(["school", "grade", "class"] as const).map((a, i) => (
-              <Chip
-                key={a}
-                label={["学校全体", "同じ学年", "同じクラス"][i]}
-                active={audience === a}
-                onPress={() => setAudience(a)}
-              />
-            ))}
+            <Text style={styles.muted}>引用する投稿</Text>
+            <Text style={styles.text}>{quoted.body}</Text>
           </View>
-          <View
-            style={[styles.card, { paddingHorizontal: 14, marginBottom: 20 }]}
-          >
-            {kind === "student" && (
-              <ModeRow
-                label="匿名で投稿"
-                value={anonymous}
-                onChange={setAnonymous}
-                icon={UserRound}
-                detail="表示名を隠します。相手を傷つける表現は投稿できません。"
-              />
-            )}
-            <View
-              style={
-                kind === "student"
-                  ? { borderTopWidth: 1, borderColor: C.line }
-                  : undefined
+        )}
+        <View className="flex-row" style={{ gap: 8, marginBottom: 24 }}>
+          {(staff && !communityId
+            ? (["student", "board", "school"] as const)
+            : (["student", "board"] as const)
+          ).map((t) => (
+            <Chip
+              key={t}
+              label={
+                t === "student" ? "投稿" : t === "board" ? "掲示板" : "学校連絡"
               }
+              active={kind === t}
+              onPress={() => setKind(t)}
+            />
+          ))}
+        </View>
+        {kind !== "student" && (
+          <>
+            <Field
+              label="タイトル"
+              value={title}
+              onChange={setTitle}
+              placeholder="ひと目で内容がわかるタイトル"
+              maxLength={80}
+            />
+            {kind === "board" && (
+              <>
+                <Text
+                  style={[
+                    styles.text,
+                    { fontWeight: "700", fontSize: 12, marginBottom: 9 },
+                  ]}
+                >
+                  カテゴリ
+                </Text>
+                <View
+                  className="flex-row flex-wrap"
+                  style={{ gap: 6, marginBottom: 20 }}
+                >
+                  {["募集", "質問", "落とし物", "イベント", "勉強", "部活"].map(
+                    (c) => (
+                      <Chip
+                        key={c}
+                        label={c}
+                        active={category === c}
+                        onPress={() => setCategory(c)}
+                      />
+                    ),
+                  )}
+                </View>
+              </>
+            )}
+          </>
+        )}
+        <Field
+          inputRef={bodyInput}
+          label="本文"
+          value={body}
+          onChange={setBody}
+          placeholder="今日のできごと、誰かへの質問、仲間の募集…"
+          multiline
+          maxLength={2000}
+        />
+        {image ? (
+          <View style={{ marginBottom: 18 }}>
+            <Image
+              source={imageSource(image)}
+              style={{ width: "100%", height: 180, borderRadius: 14 }}
+            />
+            <Pressable
+              accessibilityLabel="画像を削除"
+              onPress={() => setImage(undefined)}
+              style={{
+                position: "absolute",
+                right: 10,
+                top: 10,
+                backgroundColor: "white",
+                borderRadius: 20,
+                padding: 8,
+              }}
             >
-              <ModeRow
-                label="シークレットモード"
-                value={secret}
-                onChange={setSecret}
-                icon={LockKeyhole}
-                detail="選んだ公開範囲のうち、承認済みの友達だけに表示します。"
-              />
-            </View>
+              <X size={20} color={C.ink} />
+            </Pressable>
           </View>
-        </>
-      )}
-      {error && (
-        <Text
-          accessibilityRole="alert"
-          style={{ color: "#656565", fontSize: 12, marginBottom: 14 }}
-        >
-          {error}
-        </Text>
-      )}
-      <Button onPress={submit} disabled={busy}>
-        投稿する
-      </Button>
-    </DetailScreen>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={pick}
+            style={{
+              padding: 20,
+              borderWidth: 1,
+              borderStyle: "dashed",
+              borderColor: "#CFCFCF",
+              borderRadius: 15,
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 20,
+              backgroundColor: "#EFEFEF",
+            }}
+          >
+            <ImagePlus size={25} color={C.purple} />
+            <Text style={{ color: C.purple, fontSize: 12 }}>写真を追加</Text>
+          </Pressable>
+        )}
+        <Field
+          label="興味タグ（任意）"
+          value={tags}
+          onChange={setTags}
+          placeholder="イラスト、音楽、文化祭"
+          maxLength={100}
+        />
+        {kind === "board" && category === "募集" && (
+          <>
+            <Field
+              label="募集人数（任意・1〜100人）"
+              value={capacity}
+              onChange={setCapacity}
+              keyboard="number-pad"
+              placeholder="5"
+            />
+            <Field
+              label="締切（任意）"
+              value={deadline}
+              onChange={setDeadline}
+              placeholder="2027-05-01"
+            />
+          </>
+        )}
+        {!staff && (
+          <>
+            <Text
+              style={[
+                styles.text,
+                { fontSize: 12, fontWeight: "700", marginBottom: 9 },
+              ]}
+            >
+              公開範囲
+            </Text>
+            <View className="flex-row" style={{ gap: 7, marginBottom: 22 }}>
+              {(["school", "grade", "class"] as const).map((a, i) => (
+                <Chip
+                  key={a}
+                  label={["学校全体", "同じ学年", "同じクラス"][i]}
+                  active={audience === a}
+                  onPress={() => setAudience(a)}
+                />
+              ))}
+            </View>
+            <View
+              style={[styles.card, { paddingHorizontal: 14, marginBottom: 20 }]}
+            >
+              {kind === "student" && (
+                <ModeRow
+                  label="匿名で投稿"
+                  value={anonymous}
+                  onChange={setAnonymous}
+                  icon={UserRound}
+                  detail="表示名を隠します。相手を傷つける表現は投稿できません。"
+                />
+              )}
+              <View
+                style={
+                  kind === "student"
+                    ? { borderTopWidth: 1, borderColor: C.line }
+                    : undefined
+                }
+              >
+                <ModeRow
+                  label="シークレットモード"
+                  value={secret}
+                  onChange={setSecret}
+                  icon={LockKeyhole}
+                  detail="選んだ公開範囲のうち、承認済みの友達だけに表示します。"
+                />
+              </View>
+            </View>
+          </>
+        )}
+        {error && (
+          <Text
+            accessibilityRole="alert"
+            style={{ color: "#656565", fontSize: 12, marginBottom: 14 }}
+          >
+            {error}
+          </Text>
+        )}
+        <Button onPress={submit} disabled={busy}>
+          投稿する
+        </Button>
+      </DetailScreen>
+    </Animated.View>
   );
 }
 function ModeRow({

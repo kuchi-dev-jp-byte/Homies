@@ -224,9 +224,12 @@ export default function DirectChat() {
             value={body}
             onChangeText={setBody}
             multiline
+            numberOfLines={1}
+            textAlignVertical="center"
             maxLength={1000}
             style={{
               flex: 1,
+              fontSize: 16,
               borderRadius: 24,
               paddingHorizontal: 14,
               paddingVertical: 11,

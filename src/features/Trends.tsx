@@ -35,6 +35,13 @@ export function TrendContent({ onTag }: { onTag?: (tag: string) => void }) {
         (p.authorId === "me" ? me : profiles.find((a) => a.id === p.authorId))
           ?.gender === (group === "男子" ? "male" : "female")),
   );
+  const [awardOpen, setAwardOpen] = useState(false);
+  const awards = unlocked
+    ? trends(
+        posts.filter((p) => p.audience === "school"),
+        now,
+      ).slice(0, 10)
+    : [];
   const rows = unlocked ? trends(filtered, now) : [];
 
   return (
@@ -49,6 +56,44 @@ export function TrendContent({ onTag }: { onTag?: (tag: string) => void }) {
         />
       ) : (
         <>
+          <View
+            style={{
+              marginHorizontal: 18,
+              marginBottom: 16,
+              padding: 18,
+              borderRadius: 20,
+              backgroundColor: C.limeSoft,
+            }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              disabled={!awards.length}
+              accessibilityState={{ expanded: awardOpen }}
+              onPress={() => setAwardOpen(!awardOpen)}
+            >
+              <Text style={{ fontWeight: "800", color: C.ink }}>
+                🏆 週間流行語大賞
+              </Text>
+              <Text style={[styles.title, { marginVertical: 8 }]}>
+                {awards.length
+                  ? "#" + awards[0].tag
+                  : "まだ対象のタグがありません"}
+              </Text>
+              {!!awards.length && (
+                <Text style={styles.muted}>
+                  {awardOpen
+                    ? "ランキングを閉じる ▴"
+                    : "週間ランキングを見る ▾"}
+                </Text>
+              )}
+            </Pressable>
+            {awardOpen &&
+              awards.map((r, i) => (
+                <Text key={r.tag} style={[styles.text, { marginTop: 8 }]}>
+                  {i + 1}位　#{r.tag}　{r.current}件
+                </Text>
+              ))}
+          </View>
           <ChipRow
             items={["全体", "男子", "女子"]}
             value={group}

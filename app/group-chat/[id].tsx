@@ -159,8 +159,11 @@ export default function GroupRoom() {
                   onChangeText={setDraft}
                   maxLength={1000}
                   multiline
+                  numberOfLines={1}
+                  textAlignVertical="center"
                   style={{
                     flex: 1,
+                    fontSize: 16,
                     minHeight: 46,
                     maxHeight: 110,
                     paddingLeft: 15,
