@@ -433,7 +433,6 @@ export function SegmentTabs<T extends string>({
       accessibilityRole="tablist"
       style={{
         flexDirection: "row",
-        gap: 4,
         borderBottomWidth: 1,
         borderColor: C.line,
       }}
@@ -450,30 +449,25 @@ export function SegmentTabs<T extends string>({
               flex: 1,
               borderBottomWidth: 2,
               borderBottomColor: selected ? C.ink : "transparent",
-              paddingBottom: 5,
+              minHeight: 48,
+              paddingHorizontal: 4,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: selected ? C.lime : "transparent",
+              borderTopLeftRadius: 18,
+              borderTopRightRadius: 18,
             }}
           >
-            <View
+            <Text
               style={{
-                minHeight: 38,
-                borderRadius: 22,
-                backgroundColor: selected ? C.lime : "transparent",
-                alignItems: "center",
-                justifyContent: "center",
-                paddingHorizontal: 4,
+                color: selected ? C.ink : C.muted,
+                fontSize: 15,
+                fontWeight: "700",
+                textAlign: "center",
               }}
             >
-              <Text
-                style={{
-                  color: selected ? C.ink : C.muted,
-                  fontSize: 13,
-                  fontWeight: selected ? "800" : "700",
-                  textAlign: "center",
-                }}
-              >
-                {labels?.[item] ?? item}
-              </Text>
-            </View>
+              {labels?.[item] ?? item}
+            </Text>
           </Pressable>
         );
       })}

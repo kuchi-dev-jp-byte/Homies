@@ -445,7 +445,8 @@ export default function Matching() {
         <View style={{ marginHorizontal: 20, marginTop: 4, marginBottom: 10 }}>
           <MascotBanner
             mascot="heart"
-            tone="blue"
+            tone="lime"
+            actionLabel="クイックマッチを開く"
             title="クイックマッチで、今すぐ話そう。"
             body="同年代の3〜5人とグループチャット"
             onPress={() => router.push("/quick-match")}

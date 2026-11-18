@@ -15,26 +15,50 @@ export function MascotBanner({
   title,
   body,
   tone = "lime",
+  actionLabel,
   onPress,
 }: {
   mascot: StickerId;
   title: string;
   body: string;
   tone?: keyof typeof mascotTones;
+  actionLabel?: string;
   onPress?: () => void;
 }) {
   const content = (
     <>
       <View style={{ flex: 1, minWidth: 0, gap: 5 }}>
-        <Text style={{ fontSize: 17, fontWeight: "900", color: C.ink }}>
+        <Text
+          style={{
+            fontSize: actionLabel ? 20 : 17,
+            fontWeight: "900",
+            color: C.ink,
+          }}
+        >
           {title}
         </Text>
         <Text style={{ fontSize: 12, lineHeight: 18, color: "#414155" }}>
           {body}
         </Text>
+        {actionLabel && (
+          <View
+            style={{
+              alignSelf: "flex-start",
+              marginTop: 6,
+              backgroundColor: C.ink,
+              borderRadius: 16,
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+            }}
+          >
+            <Text style={{ color: C.bg, fontWeight: "700", fontSize: 12 }}>
+              {actionLabel}
+            </Text>
+          </View>
+        )}
       </View>
       <View style={{ transform: [{ rotate: "-5deg" }] }}>
-        <Mascot id={mascot} size={94} />
+        <Mascot id={mascot} size={actionLabel ? 108 : 94} />
       </View>
     </>
   );
@@ -45,7 +69,7 @@ export function MascotBanner({
     flexDirection: "row" as const,
     alignItems: "center" as const,
     gap: 10,
-    minHeight: 108,
+    minHeight: actionLabel ? 136 : 108,
   };
   return onPress ? (
     <Pressable

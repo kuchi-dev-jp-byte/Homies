@@ -1,9 +1,8 @@
 import { useAppStore } from "../../src/store/useAppStore";
-import { MascotBanner } from "../../src/components/MascotBanner";
+import { CreateFab } from "../../src/components/CreateFab";
 import { useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { Plus } from "lucide-react-native";
 import { C, Empty, Screen, SegmentTabs } from "../../src/components/ui";
 import { PostCard } from "../../src/components/PostCard";
 import { useVisiblePosts } from "../../src/lib/hooks";
@@ -37,43 +36,6 @@ export default function Home() {
             onChange={setFilter}
           />
         </View>
-        <View style={{ marginHorizontal: 12, marginBottom: 14 }}>
-          <MascotBanner
-            mascot={
-              filter === "匿名"
-                ? "cool"
-                : filter === "掲示板"
-                  ? "gift"
-                  : "skate"
-            }
-            tone={
-              filter === "匿名"
-                ? "blue"
-                : filter === "掲示板"
-                  ? "neutral"
-                  : "lime"
-            }
-            title={
-              filter === "匿名"
-                ? "気軽に、ひとこと。"
-                : filter === "掲示板"
-                  ? "いっしょに、何しよう？"
-                  : "今日の「好き」をシェア！"
-            }
-            body="何気ないひとことから、つながろう。"
-            onPress={() =>
-              router.push({
-                pathname: "/create",
-                params:
-                  filter === "掲示板"
-                    ? { kind: "board" }
-                    : filter === "匿名"
-                      ? { anonymous: "1" }
-                      : {},
-              })
-            }
-          />
-        </View>
         <View style={{ paddingBottom: 70, paddingHorizontal: 0 }}>
           {filter === "投稿" &&
             posts
@@ -98,9 +60,8 @@ export default function Home() {
           )}
         </View>
       </Screen>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="投稿を作成"
+      <CreateFab
+        label="投稿を作成"
         onPress={() =>
           router.push({
             pathname: "/create",
@@ -112,27 +73,7 @@ export default function Home() {
                   : {},
           })
         }
-        style={{
-          position: "absolute",
-          bottom: 22,
-          right: 22,
-          width: 58,
-          height: 58,
-          borderWidth: 2,
-          borderColor: C.bg,
-          borderRadius: 29,
-          backgroundColor: C.accent,
-          alignItems: "center",
-          justifyContent: "center",
-          elevation: 5,
-          shadowColor: C.accent,
-          shadowOpacity: 0.25,
-          shadowRadius: 12,
-          shadowOffset: { width: 0, height: 5 },
-        }}
-      >
-        <Plus size={27} color="white" />
-      </Pressable>
+      />
     </View>
   );
 }

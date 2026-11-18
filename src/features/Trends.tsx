@@ -41,6 +41,7 @@ export function TrendContent({ onTag }: { onTag?: (tag: string) => void }) {
     <>
       {!unlocked ? (
         <Empty
+          mascot="study"
           title="今日の投稿でトレンドを見る"
           body="投稿すると、学校で今話題になっているタグを確認できます。"
           action="投稿する"

@@ -1,3 +1,5 @@
+import { CommunityDiscovery } from "./CommunityDiscovery";
+import { CreateFab } from "../components/CreateFab";
 import { MascotBanner } from "../components/MascotBanner";
 import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
@@ -135,7 +137,7 @@ export default function Communities() {
   return (
     <View style={{ flex: 1 }}>
       <Screen>
-        {!search && (
+        {!search && mode === "参加中" && (
           <View style={{ marginHorizontal: 20, marginBottom: 16 }}>
             <MascotBanner
               mascot="game"
@@ -177,9 +179,14 @@ export default function Communities() {
             labels={{ 参加中: `参加中 (${joined.length})` }}
           />
         </View>
-        <View style={{ paddingHorizontal: 20 }}>
+        <View style={{ paddingHorizontal: 20, paddingBottom: 64 }}>
           {isLoading ? (
             <Loading />
+          ) : mode === "おすすめ" ? (
+            <CommunityDiscovery
+              rooms={data.filter((c) => !joined.includes(c.id))}
+              search={search}
+            />
           ) : (
             items.map((c) => (
               <CommunityCard
@@ -189,8 +196,9 @@ export default function Communities() {
               />
             ))
           )}
-          {!isLoading && !items.length && (
+          {!isLoading && mode === "参加中" && !items.length && (
             <Empty
+              mascot={!search && mode === "参加中" ? "game" : undefined}
               title={
                 search
                   ? "コミュニティが見つかりません"
@@ -214,29 +222,15 @@ export default function Communities() {
           )}
         </View>
       </Screen>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="コミュニティを作成"
+      <CreateFab
+        label="コミュニティを作成"
         onPress={() =>
           router.push({
             pathname: "/room-editor",
             params: { kind: "community" },
           })
         }
-        style={{
-          position: "absolute",
-          right: 22,
-          bottom: 22,
-          width: 58,
-          height: 58,
-          borderRadius: 29,
-          backgroundColor: C.accent,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Text style={{ color: "white", fontSize: 32 }}>＋</Text>
-      </Pressable>
+      />
     </View>
   );
 }

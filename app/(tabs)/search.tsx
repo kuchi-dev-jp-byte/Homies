@@ -168,16 +168,12 @@ export default function UserSearch() {
         ) : tab === "投稿" ? (
           postResults.length ? (
             postResults.map((p) => <PostCard key={p.id} post={p} />)
-          ) : (
+          ) : searching ? (
             <Empty
-              title={searching ? "投稿が見つかりません" : "投稿を検索"}
-              body={
-                searching
-                  ? "別のキーワードをお試しください。"
-                  : "本文のキーワードやハッシュタグで探せます。"
-              }
+              title="投稿が見つかりません"
+              body="別のキーワードをお試しください。"
             />
-          )
+          ) : null
         ) : isLoading ? (
           <Loading />
         ) : rows.length ? (

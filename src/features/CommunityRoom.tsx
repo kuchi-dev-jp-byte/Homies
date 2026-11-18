@@ -273,6 +273,9 @@ export default function CommunityRoom() {
             >
               {community.description}
             </Text>
+            <View style={{ marginTop: 24 }}>
+              <Mascot id="heart" size={115} />
+            </View>
           </ScrollView>
           <View style={{ padding: 20, borderTopWidth: 1, borderColor: C.line }}>
             <Button
