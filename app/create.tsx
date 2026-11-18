@@ -1,9 +1,14 @@
-import { useVisiblePosts } from "../src/lib/hooks";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useCurrentProfile, useVisiblePosts } from "../src/lib/hooks";
 import { anonymousAllowed } from "../src/lib/activity";
 import { imageSource } from "../src/data/images";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   TextInput,
   useWindowDimensions,
   Pressable,
@@ -13,9 +18,16 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { ImagePlus, LockKeyhole, UserRound, X } from "lucide-react-native";
+import {
+  ArrowLeft,
+  Hash,
+  ImagePlus,
+  LockKeyhole,
+  UserRound,
+  X,
+} from "lucide-react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { Button, C, Chip, DetailScreen, styles } from "../src/components/ui";
+import { Avatar, Button, C, Chip, styles } from "../src/components/ui";
 import { Field } from "../src/components/forms";
 import { postSchema } from "../src/lib/domain";
 import { useAppStore } from "../src/store/useAppStore";
@@ -32,6 +44,26 @@ export default function CreatePost() {
     kind?: string;
     anonymous?: string;
   }>();
+  const [settings, setSettings] = useState(false);
+  const [showTags, setShowTags] = useState(false);
+  const profile = useCurrentProfile();
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const update = () =>
+      setKeyboardInset(
+        Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop),
+      );
+    update();
+    viewport.addEventListener("resize", update);
+    viewport.addEventListener("scroll", update);
+    return () => {
+      viewport.removeEventListener("resize", update);
+      viewport.removeEventListener("scroll", update);
+    };
+  }, []);
   const bodyInput = useRef<TextInput>(null);
   const { height } = useWindowDimensions();
   const offset = useRef(new Animated.Value(height)).current;
@@ -156,210 +188,328 @@ export default function CreatePost() {
   };
   return (
     <Animated.View style={{ flex: 1, transform: [{ translateY: offset }] }}>
-      <DetailScreen title={communityId ? "コミュニティに投稿" : "新しい投稿"}>
-        {quoted && (
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: C.bg, paddingBottom: keyboardInset }}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
           <View
             style={{
-              padding: 14,
-              borderWidth: 1,
-              borderColor: C.line,
-              borderRadius: 14,
-              marginBottom: 16,
+              height: 54,
+              paddingHorizontal: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
-            <Text style={styles.muted}>引用する投稿</Text>
-            <Text style={styles.text}>{quoted.body}</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={settings ? "本文に戻る" : "閉じる"}
+              hitSlop={10}
+              onPress={() => (settings ? setSettings(false) : router.back())}
+            >
+              {settings ? <ArrowLeft color={C.ink} /> : <X color={C.ink} />}
+            </Pressable>
+            <Text style={{ fontWeight: "700", color: C.ink }}>
+              {settings
+                ? "投稿の設定"
+                : communityId
+                  ? "コミュニティに投稿"
+                  : "新しい投稿"}
+            </Text>
+            {settings ? (
+              <View style={{ width: 45 }} />
+            ) : (
+              <Button
+                small
+                disabled={!body.trim()}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setError("");
+                  setSettings(true);
+                }}
+              >
+                次へ
+              </Button>
+            )}
           </View>
-        )}
-        <View className="flex-row" style={{ gap: 8, marginBottom: 24 }}>
-          {(staff && !communityId
-            ? (["student", "board", "school"] as const)
-            : (["student", "board"] as const)
-          ).map((t) => (
-            <Chip
-              key={t}
-              label={
-                t === "student" ? "投稿" : t === "board" ? "掲示板" : "学校連絡"
-              }
-              active={kind === t}
-              onPress={() => setKind(t)}
-            />
-          ))}
-        </View>
-        {kind !== "student" && (
-          <>
-            <Field
-              label="タイトル"
-              value={title}
-              onChange={setTitle}
-              placeholder="ひと目で内容がわかるタイトル"
-              maxLength={80}
-            />
-            {kind === "board" && (
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            style={{ flex: 1 }}
+            contentContainerStyle={{ padding: 18 }}
+          >
+            {!settings && (
               <>
-                <Text
-                  style={[
-                    styles.text,
-                    { fontWeight: "700", fontSize: 12, marginBottom: 9 },
-                  ]}
-                >
-                  カテゴリ
-                </Text>
                 <View
-                  className="flex-row flex-wrap"
-                  style={{ gap: 6, marginBottom: 20 }}
+                  style={{
+                    flexDirection: "row",
+                    gap: 12,
+                    alignItems: "flex-start",
+                    marginBottom: 18,
+                  }}
                 >
-                  {["募集", "質問", "落とし物", "イベント", "勉強", "部活"].map(
-                    (c) => (
-                      <Chip
-                        key={c}
-                        label={c}
-                        active={category === c}
-                        onPress={() => setCategory(c)}
-                      />
-                    ),
-                  )}
+                  <Avatar uri={profile.avatar} size={40} />
+                  <TextInput
+                    ref={bodyInput}
+                    accessibilityLabel="本文"
+                    placeholder="いまどうしてる？"
+                    placeholderTextColor={C.placeholder}
+                    multiline
+                    maxLength={2000}
+                    value={body}
+                    onChangeText={setBody}
+                    textAlignVertical="top"
+                    style={{
+                      flex: 1,
+                      minHeight: 96,
+                      fontSize: 18,
+                      lineHeight: 26,
+                      paddingVertical: 6,
+                      color: C.ink,
+                    }}
+                  />
                 </View>
+                {quoted && (
+                  <View
+                    style={{
+                      padding: 14,
+                      borderWidth: 1,
+                      borderColor: C.line,
+                      borderRadius: 14,
+                      marginBottom: 16,
+                    }}
+                  >
+                    <Text style={styles.muted}>引用する投稿</Text>
+                    <Text style={styles.text}>{quoted.body}</Text>
+                  </View>
+                )}
+                {image ? (
+                  <View style={{ marginBottom: 18 }}>
+                    <Image
+                      source={imageSource(image)}
+                      style={{ width: "100%", height: 180, borderRadius: 14 }}
+                    />
+                    <Pressable
+                      accessibilityLabel="画像を削除"
+                      onPress={() => setImage(undefined)}
+                      style={{
+                        position: "absolute",
+                        right: 10,
+                        top: 10,
+                        backgroundColor: "white",
+                        borderRadius: 20,
+                        padding: 8,
+                      }}
+                    >
+                      <X size={20} color={C.ink} />
+                    </Pressable>
+                  </View>
+                ) : null}
+                {showTags && (
+                  <Field
+                    label="興味タグ（任意）"
+                    value={tags}
+                    onChange={setTags}
+                    placeholder="イラスト、音楽、文化祭"
+                    maxLength={100}
+                  />
+                )}
               </>
             )}
-          </>
-        )}
-        <Field
-          inputRef={bodyInput}
-          label="本文"
-          value={body}
-          onChange={setBody}
-          placeholder="今日のできごと、誰かへの質問、仲間の募集…"
-          multiline
-          maxLength={2000}
-        />
-        {image ? (
-          <View style={{ marginBottom: 18 }}>
-            <Image
-              source={imageSource(image)}
-              style={{ width: "100%", height: 180, borderRadius: 14 }}
-            />
-            <Pressable
-              accessibilityLabel="画像を削除"
-              onPress={() => setImage(undefined)}
+            {settings && (
+              <>
+                <View className="flex-row" style={{ gap: 8, marginBottom: 24 }}>
+                  {(staff && !communityId
+                    ? (["student", "board", "school"] as const)
+                    : (["student", "board"] as const)
+                  ).map((t) => (
+                    <Chip
+                      key={t}
+                      label={
+                        t === "student"
+                          ? "投稿"
+                          : t === "board"
+                            ? "掲示板"
+                            : "学校連絡"
+                      }
+                      active={kind === t}
+                      onPress={() => setKind(t)}
+                    />
+                  ))}
+                </View>
+                {kind !== "student" && (
+                  <>
+                    <Field
+                      label="タイトル"
+                      value={title}
+                      onChange={setTitle}
+                      placeholder="ひと目で内容がわかるタイトル"
+                      maxLength={80}
+                    />
+                    {kind === "board" && (
+                      <>
+                        <Text
+                          style={[
+                            styles.text,
+                            {
+                              fontWeight: "700",
+                              fontSize: 12,
+                              marginBottom: 9,
+                            },
+                          ]}
+                        >
+                          カテゴリ
+                        </Text>
+                        <View
+                          className="flex-row flex-wrap"
+                          style={{ gap: 6, marginBottom: 20 }}
+                        >
+                          {[
+                            "募集",
+                            "質問",
+                            "落とし物",
+                            "イベント",
+                            "勉強",
+                            "部活",
+                          ].map((c) => (
+                            <Chip
+                              key={c}
+                              label={c}
+                              active={category === c}
+                              onPress={() => setCategory(c)}
+                            />
+                          ))}
+                        </View>
+                      </>
+                    )}
+                  </>
+                )}
+                {kind === "board" && category === "募集" && (
+                  <>
+                    <Field
+                      label="募集人数（任意・1〜100人）"
+                      value={capacity}
+                      onChange={setCapacity}
+                      keyboard="number-pad"
+                      placeholder="5"
+                    />
+                    <Field
+                      label="締切（任意）"
+                      value={deadline}
+                      onChange={setDeadline}
+                      placeholder="2027-05-01"
+                    />
+                  </>
+                )}
+                {!staff && (
+                  <>
+                    <Text
+                      style={[
+                        styles.text,
+                        { fontSize: 12, fontWeight: "700", marginBottom: 9 },
+                      ]}
+                    >
+                      公開範囲
+                    </Text>
+                    <View
+                      className="flex-row"
+                      style={{ gap: 7, marginBottom: 22 }}
+                    >
+                      {(["school", "grade", "class"] as const).map((a, i) => (
+                        <Chip
+                          key={a}
+                          label={["学校全体", "同じ学年", "同じクラス"][i]}
+                          active={audience === a}
+                          onPress={() => setAudience(a)}
+                        />
+                      ))}
+                    </View>
+                    <View
+                      style={[
+                        styles.card,
+                        { paddingHorizontal: 14, marginBottom: 20 },
+                      ]}
+                    >
+                      {kind === "student" && (
+                        <ModeRow
+                          label="匿名で投稿"
+                          value={anonymous}
+                          onChange={setAnonymous}
+                          icon={UserRound}
+                          detail="表示名を隠します。相手を傷つける表現は投稿できません。"
+                        />
+                      )}
+                      <View
+                        style={
+                          kind === "student"
+                            ? { borderTopWidth: 1, borderColor: C.line }
+                            : undefined
+                        }
+                      >
+                        <ModeRow
+                          label="シークレットモード"
+                          value={secret}
+                          onChange={setSecret}
+                          icon={LockKeyhole}
+                          detail="選んだ公開範囲のうち、承認済みの友達だけに表示します。"
+                        />
+                      </View>
+                    </View>
+                  </>
+                )}
+              </>
+            )}
+            {error && (
+              <Text
+                accessibilityRole="alert"
+                style={{ color: "#656565", fontSize: 12, marginBottom: 14 }}
+              >
+                {error}
+              </Text>
+            )}
+            {settings && (
+              <Button onPress={submit} disabled={busy}>
+                投稿する
+              </Button>
+            )}
+          </ScrollView>
+          {!settings && (
+            <View
               style={{
-                position: "absolute",
-                right: 10,
-                top: 10,
-                backgroundColor: "white",
-                borderRadius: 20,
-                padding: 8,
+                flexDirection: "row",
+                gap: 22,
+                borderTopWidth: 1,
+                borderColor: C.line,
+                paddingHorizontal: 20,
+                alignItems: "center",
+                minHeight: 52,
               }}
             >
-              <X size={20} color={C.ink} />
-            </Pressable>
-          </View>
-        ) : (
-          <Pressable
-            accessibilityRole="button"
-            onPress={pick}
-            style={{
-              padding: 20,
-              borderWidth: 1,
-              borderStyle: "dashed",
-              borderColor: "#CFCFCF",
-              borderRadius: 15,
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 20,
-              backgroundColor: "#EFEFEF",
-            }}
-          >
-            <ImagePlus size={25} color={C.purple} />
-            <Text style={{ color: C.purple, fontSize: 12 }}>写真を追加</Text>
-          </Pressable>
-        )}
-        <Field
-          label="興味タグ（任意）"
-          value={tags}
-          onChange={setTags}
-          placeholder="イラスト、音楽、文化祭"
-          maxLength={100}
-        />
-        {kind === "board" && category === "募集" && (
-          <>
-            <Field
-              label="募集人数（任意・1〜100人）"
-              value={capacity}
-              onChange={setCapacity}
-              keyboard="number-pad"
-              placeholder="5"
-            />
-            <Field
-              label="締切（任意）"
-              value={deadline}
-              onChange={setDeadline}
-              placeholder="2027-05-01"
-            />
-          </>
-        )}
-        {!staff && (
-          <>
-            <Text
-              style={[
-                styles.text,
-                { fontSize: 12, fontWeight: "700", marginBottom: 9 },
-              ]}
-            >
-              公開範囲
-            </Text>
-            <View className="flex-row" style={{ gap: 7, marginBottom: 22 }}>
-              {(["school", "grade", "class"] as const).map((a, i) => (
-                <Chip
-                  key={a}
-                  label={["学校全体", "同じ学年", "同じクラス"][i]}
-                  active={audience === a}
-                  onPress={() => setAudience(a)}
-                />
-              ))}
-            </View>
-            <View
-              style={[styles.card, { paddingHorizontal: 14, marginBottom: 20 }]}
-            >
-              {kind === "student" && (
-                <ModeRow
-                  label="匿名で投稿"
-                  value={anonymous}
-                  onChange={setAnonymous}
-                  icon={UserRound}
-                  detail="表示名を隠します。相手を傷つける表現は投稿できません。"
-                />
-              )}
-              <View
-                style={
-                  kind === "student"
-                    ? { borderTopWidth: 1, borderColor: C.line }
-                    : undefined
-                }
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="写真を添付"
+                hitSlop={8}
+                onPress={pick}
               >
-                <ModeRow
-                  label="シークレットモード"
-                  value={secret}
-                  onChange={setSecret}
-                  icon={LockKeyhole}
-                  detail="選んだ公開範囲のうち、承認済みの友達だけに表示します。"
-                />
-              </View>
+                <ImagePlus color={C.accent} />
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="興味タグを編集"
+                hitSlop={8}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setShowTags(!showTags);
+                }}
+              >
+                <Hash color={C.accent} />
+              </Pressable>
             </View>
-          </>
-        )}
-        {error && (
-          <Text
-            accessibilityRole="alert"
-            style={{ color: "#656565", fontSize: 12, marginBottom: 14 }}
-          >
-            {error}
-          </Text>
-        )}
-        <Button onPress={submit} disabled={busy}>
-          投稿する
-        </Button>
-      </DetailScreen>
+          )}
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </Animated.View>
   );
 }
